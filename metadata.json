@@ -1,0 +1,6 @@
+{
+  "name": "Ledger",
+  "description": "An offline-first Personal Finance application to manage accounts, transactions, custom categories, budgets, recurring expenses, and debts with Google Drive cloud backup.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

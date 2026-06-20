@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Outer Shield Capsule -->
+    <path
+        android:pathData="M54,22 C37,22 30,34 30,54 C30,74 37,86 54,86 C71,86 78,74 78,54 C78,34 71,22 54,22 Z"
+        android:fillColor="#1A2035"
+        android:strokeWidth="3.5"
+        android:strokeColor="#FFFFFF" />
+
+    <!-- Ledger representation -->
+    <path
+        android:pathData="M38,44h32v8h-32z"
+        android:fillColor="#3B82F6" />
+    <path
+        android:pathData="M38,56h32v12h-32z"
+        android:fillColor="#FFFFFF" />
+
+    <!-- Coin overlay -->
+    <path
+        android:pathData="M64,52 a7,7 0 1,1 14,0 a7,7 0 1,1 -14,0"
+        android:fillColor="#10B981" />
+    <path
+        android:pathData="M71,48v8 M67,52h8"
+        android:strokeWidth="1.5"
+        android:strokeColor="#FFFFFF" />
+</vector>
