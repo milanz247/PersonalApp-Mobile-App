@@ -6,7 +6,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
@@ -316,6 +319,64 @@ fun PinLockScreen(viewModel: AppViewModel) {
 }
 
 // -------------------------------------------------------------
+// FLOATING CORE NAVIGATION COMPONENT WITH HIGH FIDELITY DESIGN
+@Composable
+fun FloatingNavItem(
+    selected: Boolean,
+    onClick: () -> Unit,
+    icon: @Composable () -> Unit,
+    label: String,
+    modifier: Modifier = Modifier
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.95f else 1.0f,
+        animationSpec = spring(
+            dampingRatio = 0.58f,
+            stiffness = Spring.StiffnessMedium
+        )
+    )
+
+    Box(
+        modifier = modifier
+            .fillMaxHeight()
+            .clip(RoundedCornerShape(20.dp))
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(width = 44.dp, height = 28.dp)
+                    .graphicsLayer {
+                        scaleX = scale
+                        scaleY = scale
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                icon()
+            }
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = label,
+                fontSize = 10.sp,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
+                color = if (selected) PremiumIndigo else Color(0xFF65676B),
+                letterSpacing = 0.1.sp
+            )
+        }
+    }
+}
+
+// -------------------------------------------------------------
 // CORE APP SCREEN WRAPPER WITH ADAPTIVE TABS AND THE MENU PATTERN
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -469,111 +530,149 @@ fun AppContentLayout(viewModel: AppViewModel) {
             )
         },
         bottomBar = {
-            // Elegant revamped central QuickBooks-style Bottom Navigation Bar
-            NavigationBar(
-                containerColor = MaterialTheme.colorScheme.background,
-                tonalElevation = 4.dp,
+            // Redesigned Floating Bottom Navigation Panel with standardized items and exceptional spacing
+            Box(
                 modifier = Modifier
-                    .height(84.dp)
-                    .drawBehind {
-                        // Soft light-gray border on top of bar for beautiful division
-                        drawLine(
-                            color = Color(0xFFECECEC),
-                            start = Offset(0f, 0f),
-                            end = Offset(size.width, 0f),
-                            strokeWidth = 1.2.dp.toPx()
-                        )
-                    },
-                windowInsets = WindowInsets.navigationBars
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(start = 12.dp, end = 12.dp, bottom = 12.dp)
             ) {
-                val itemColors = NavigationBarItemDefaults.colors(
-                    indicatorColor = PremiumIndigo.copy(alpha = 0.12f),
-                    selectedIconColor = PremiumIndigo,
-                    unselectedIconColor = Color(0xFF65676B),
-                    selectedTextColor = PremiumIndigo,
-                    unselectedTextColor = Color(0xFF65676B)
-                )
-
-                // 1. Dashboard (Home)
-                NavigationBarItem(
-                    selected = currentRoute == ROUTE_DASHBOARD,
-                    onClick = { navController.navigate(ROUTE_DASHBOARD) { popUpTo(ROUTE_DASHBOARD) { inclusive = true } } },
-                    icon = { Icon(Icons.Default.Home, contentDescription = "Dashboard") },
-                    label = { Text("Home", fontSize = 10.sp, fontWeight = FontWeight.SemiBold) },
-                    colors = itemColors
-                )
-
-                // 2. Accounts
-                NavigationBarItem(
-                    selected = currentRoute == ROUTE_ACCOUNTS,
-                    onClick = { navController.navigate(ROUTE_ACCOUNTS) },
-                    icon = { Icon(Icons.Default.AccountBalanceWallet, contentDescription = "Accounts") },
-                    label = { Text("Accounts", fontSize = 10.sp, fontWeight = FontWeight.SemiBold) },
-                    colors = itemColors
-                )
-
-                // 3. Central QuickBooks QuickBooker Action FAB Button
-                Box(
+                Surface(
+                    shape = RoundedCornerShape(28.dp),
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+                    tonalElevation = 6.dp,
+                    shadowElevation = 12.dp,
                     modifier = Modifier
-                        .weight(1.1f)
-                        .fillMaxHeight(),
-                    contentAlignment = Alignment.Center
+                        .fillMaxWidth()
+                        .border(
+                            width = 1.2.dp,
+                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.16f),
+                            shape = RoundedCornerShape(28.dp)
+                        )
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                    BoxWithConstraints(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 16.dp, horizontal = 8.dp)
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(50.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    brush = Brush.linearGradient(
-                                        colors = listOf(PremiumIndigo, Color(0xFF4F46E5))
+                        val containerWidth = maxWidth
+                        val targetFraction = when (currentRoute) {
+                            ROUTE_DASHBOARD -> 0f / 5.1f
+                            ROUTE_ACCOUNTS -> 1f / 5.1f
+                            ROUTE_TRANSACTIONS -> 3.1f / 5.1f
+                            else -> 0f / 5.1f
+                        }
+                        val animatedFraction by animateFloatAsState(
+                            targetValue = targetFraction,
+                            animationSpec = spring(
+                                dampingRatio = 0.72f,
+                                stiffness = 180f
+                            )
+                        )
+
+                        if (currentRoute == ROUTE_DASHBOARD || currentRoute == ROUTE_ACCOUNTS || currentRoute == ROUTE_TRANSACTIONS) {
+                            Box(
+                                modifier = Modifier
+                                    .offset(x = containerWidth * animatedFraction)
+                                    .width(containerWidth / 5.1f)
+                                    .height(48.dp)
+                                    .background(
+                                        color = PremiumIndigo.copy(alpha = 0.12f),
+                                        shape = RoundedCornerShape(24.dp)
                                     )
-                                )
-                                .clickable {
-                                    qAccountId = accounts.firstOrNull()?.id ?: 0L
-                                    qCategoryId = categories.firstOrNull { it.type == qType }?.id
-                                    showQuickAddSheet = true
-                                },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = "QuickBooker Action",
-                                tint = Color.White,
-                                modifier = Modifier.size(26.dp)
                             )
                         }
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = "QuickBook",
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Black,
-                            color = PremiumIndigo,
-                            letterSpacing = 0.2.sp
-                        )
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            // 1. Dashboard (Home)
+                            FloatingNavItem(
+                                selected = currentRoute == ROUTE_DASHBOARD,
+                                onClick = { navController.navigate(ROUTE_DASHBOARD) { popUpTo(ROUTE_DASHBOARD) { inclusive = true } } },
+                                icon = { Icon(Icons.Default.Home, contentDescription = "Dashboard", modifier = Modifier.size(20.dp), tint = if (currentRoute == ROUTE_DASHBOARD) PremiumIndigo else Color(0xFF65676B)) },
+                                label = "Home",
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            // 2. Accounts
+                            FloatingNavItem(
+                                selected = currentRoute == ROUTE_ACCOUNTS,
+                                onClick = { navController.navigate(ROUTE_ACCOUNTS) },
+                                icon = { Icon(Icons.Default.AccountBalanceWallet, contentDescription = "Accounts", modifier = Modifier.size(20.dp), tint = if (currentRoute == ROUTE_ACCOUNTS) PremiumIndigo else Color(0xFF65676B)) },
+                                label = "Accounts",
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            // 3. Central QuickBooks QuickBooker Action FAB Button
+                            Box(
+                                modifier = Modifier
+                                    .weight(1.1f)
+                                    .fillMaxHeight(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(36.dp)
+                                            .clip(CircleShape)
+                                            .background(
+                                                brush = Brush.linearGradient(
+                                                    colors = listOf(PremiumIndigo, Color(0xFF4F46E5))
+                                                )
+                                            )
+                                            .clickable {
+                                                qAccountId = accounts.firstOrNull()?.id ?: 0L
+                                                qCategoryId = categories.firstOrNull { it.type == qType }?.id
+                                                showQuickAddSheet = true
+                                            },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Add,
+                                            contentDescription = "QuickBooker Action",
+                                            tint = Color.White,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "QuickBook",
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Black,
+                                        color = PremiumIndigo,
+                                        letterSpacing = 0.2.sp
+                                    )
+                                }
+                            }
+
+                            // 4. Ledger (Transactions)
+                            FloatingNavItem(
+                                selected = currentRoute == ROUTE_TRANSACTIONS,
+                                onClick = { navController.navigate(ROUTE_TRANSACTIONS) },
+                                icon = { Icon(Icons.Default.FormatListBulleted, contentDescription = "Transactions", modifier = Modifier.size(20.dp), tint = if (currentRoute == ROUTE_TRANSACTIONS) PremiumIndigo else Color(0xFF65676B)) },
+                                label = "Ledger",
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            // 5. Menu Catalog
+                            FloatingNavItem(
+                                selected = false,
+                                onClick = { showMenuSheet = true },
+                                icon = { Icon(Icons.Default.Menu, contentDescription = "Menu catalog", modifier = Modifier.size(20.dp), tint = Color(0xFF65676B)) },
+                                label = "More",
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
                     }
                 }
-
-                // 4. Ledger (Transactions)
-                NavigationBarItem(
-                    selected = currentRoute == ROUTE_TRANSACTIONS,
-                    onClick = { navController.navigate(ROUTE_TRANSACTIONS) },
-                    icon = { Icon(Icons.Default.FormatListBulleted, contentDescription = "Transactions") },
-                    label = { Text("Ledger", fontSize = 10.sp, fontWeight = FontWeight.SemiBold) },
-                    colors = itemColors
-                )
-
-                // 5. Menu
-                NavigationBarItem(
-                    selected = false,
-                    onClick = { showMenuSheet = true },
-                    icon = { Icon(Icons.Default.Menu, contentDescription = "Menu catalog") },
-                    label = { Text("More", fontSize = 10.sp, fontWeight = FontWeight.SemiBold) },
-                    colors = itemColors
-                )
             }
         },
         floatingActionButton = {}
