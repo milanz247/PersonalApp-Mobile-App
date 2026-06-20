@@ -353,14 +353,33 @@ fun TransactionsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
         if (showAddDialog) {
             AlertDialog(
                 onDismissRequest = { showAddDialog = false },
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(20.dp),
                 containerColor = MaterialTheme.colorScheme.surface,
                 title = {
-                    Text(
-                        "Log Transaction",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .background(PremiumIndigo.copy(alpha = 0.1f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.SwapHoriz,
+                                contentDescription = null,
+                                tint = PremiumIndigo,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Text(
+                            "Log Transaction",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 },
                 text = {
                     Column(
@@ -460,18 +479,23 @@ fun TransactionsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
                                 readOnly = true,
                                 label = { Text("Category") },
                                 trailingIcon = {
-                                    IconButton(onClick = { categoryExpanded = !categoryExpanded }) {
-                                        Icon(
-                                            imageVector = Icons.Default.ArrowDropDown,
-                                            contentDescription = "Expand Category dropdown"
-                                        )
-                                    }
+                                    Icon(
+                                        imageVector = Icons.Default.ArrowDropDown,
+                                        contentDescription = "Expand Category dropdown",
+                                        tint = PremiumIndigo
+                                    )
                                 },
                                 shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = premiumTextFieldColors(),
+                                singleLine = true
+                            )
+
+                            // Invisible tap interceptor
+                            Box(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { categoryExpanded = !categoryExpanded },
-                                colors = premiumTextFieldColors()
+                                    .matchParentSize()
+                                    .clickable { categoryExpanded = !categoryExpanded }
                             )
 
                             DropdownMenu(
@@ -480,6 +504,7 @@ fun TransactionsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
                                 modifier = Modifier
                                     .fillMaxWidth(0.9f)
                                     .background(MaterialTheme.colorScheme.surface)
+                                    .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
                             ) {
                                 if (activeCategories.isEmpty()) {
                                     DropdownMenuItem(

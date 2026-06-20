@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.material.icons.Icons
@@ -69,8 +71,16 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
                 val appViewModel: AppViewModel = viewModel()
                 val locked by appViewModel.isAppUnlocked.collectAsState()
                 val showWelcomeScreen by appViewModel.showWelcomeBackScreen.collectAsState()
+                var isLaunching by remember { mutableStateOf(true) }
 
-                if (showWelcomeScreen) {
+                LaunchedEffect(Unit) {
+                    kotlinx.coroutines.delay(1800)
+                    isLaunching = false
+                }
+
+                if (isLaunching) {
+                    AppStartupSplashScreen()
+                } else if (showWelcomeScreen) {
                     WelcomeBackScreen(viewModel = appViewModel)
                 } else if (!locked) {
                     PinLockScreen(viewModel = appViewModel)
@@ -985,3 +995,129 @@ fun WelcomeBackScreen(viewModel: AppViewModel) {
         }
     }
 }
+
+@Composable
+fun AppStartupSplashScreen() {
+    var animValue by remember { mutableStateOf(0.7f) }
+    var rotationValue by remember { mutableStateOf(0f) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            animValue = 1.1f
+            kotlinx.coroutines.delay(900)
+            animValue = 0.85f
+            kotlinx.coroutines.delay(900)
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            rotationValue += 3.6f
+            kotlinx.coroutines.delay(16)
+        }
+    }
+
+    val scale by animateFloatAsState(
+        targetValue = animValue,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow)
+    )
+
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = Color(0xFF0F0C20)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color(0xFF0B0914),
+                            Color(0xFF120E2C),
+                            Color(0xFF18133B)
+                        )
+                    )
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(140.dp)
+                        .drawBehind {
+                            drawCircle(
+                                brush = Brush.linearGradient(
+                                    colors = listOf(Color(0xFFFFDF00), Color(0xFFF59E0B))
+                                ),
+                                radius = size.minDimension / 2.1f,
+                                style = androidx.compose.ui.graphics.drawscope.Stroke(
+                                    width = 3.dp.toPx()
+                                )
+                            )
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(80.dp)
+                            .graphicsLayer {
+                                scaleX = scale
+                                scaleY = scale
+                                rotationZ = rotationValue * 0.12f
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AccountBalance,
+                            contentDescription = "Ledger Logo Shimmer",
+                            tint = Color(0xFFFBBF24),
+                            modifier = Modifier.size(54.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(36.dp))
+
+                Text(
+                    text = "L E D G E R",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Black,
+                    color = Color.White,
+                    letterSpacing = 6.sp
+                )
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Text(
+                    text = "DOUBLE-ENTRY VAULT ENGINE",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF818CF8),
+                    letterSpacing = 1.8.sp
+                )
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    strokeWidth = 2.5.dp,
+                    color = Color(0xFFF59E0B),
+                    trackColor = Color(0xFF312E81)
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Text(
+                    text = "Bootstrapping state safely...",
+                    fontSize = 11.sp,
+                    color = Color.White.copy(alpha = 0.4f),
+                    letterSpacing = 0.5.sp
+                )
+            }
+        }
+    }
+}
+
