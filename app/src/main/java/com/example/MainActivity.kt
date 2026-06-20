@@ -29,6 +29,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -330,6 +331,8 @@ fun FloatingNavItem(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
+    
+    // Press bounce animation
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.95f else 1.0f,
         animationSpec = spring(
@@ -337,6 +340,21 @@ fun FloatingNavItem(
             stiffness = Spring.StiffnessMedium
         )
     )
+
+    // Initial load entry scale animation
+    var entered by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        entered = true
+    }
+    val entryScale by animateFloatAsState(
+        targetValue = if (entered) 1.0f else 0.7f,
+        animationSpec = spring(
+            dampingRatio = 0.65f,
+            stiffness = Spring.StiffnessLow
+        )
+    )
+
+    val finalScale = scale * entryScale
 
     Box(
         modifier = modifier
@@ -357,8 +375,8 @@ fun FloatingNavItem(
                 modifier = Modifier
                     .size(width = 44.dp, height = 28.dp)
                     .graphicsLayer {
-                        scaleX = scale
-                        scaleY = scale
+                        scaleX = finalScale
+                        scaleY = finalScale
                     },
                 contentAlignment = Alignment.Center
             ) {
@@ -539,11 +557,12 @@ fun AppContentLayout(viewModel: AppViewModel) {
             ) {
                 Surface(
                     shape = RoundedCornerShape(28.dp),
-                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.65f),
                     tonalElevation = 6.dp,
                     shadowElevation = 12.dp,
                     modifier = Modifier
                         .fillMaxWidth()
+                        .blur(16.dp)
                         .border(
                             width = 1.2.dp,
                             color = MaterialTheme.colorScheme.outline.copy(alpha = 0.16f),
@@ -594,7 +613,7 @@ fun AppContentLayout(viewModel: AppViewModel) {
                             FloatingNavItem(
                                 selected = currentRoute == ROUTE_DASHBOARD,
                                 onClick = { navController.navigate(ROUTE_DASHBOARD) { popUpTo(ROUTE_DASHBOARD) { inclusive = true } } },
-                                icon = { Icon(Icons.Default.Home, contentDescription = "Dashboard", modifier = Modifier.size(20.dp), tint = if (currentRoute == ROUTE_DASHBOARD) PremiumIndigo else Color(0xFF65676B)) },
+                                icon = { Icon(Icons.Default.Home, contentDescription = "Dashboard", modifier = Modifier.size(24.dp), tint = if (currentRoute == ROUTE_DASHBOARD) PremiumIndigo else Color(0xFF65676B)) },
                                 label = "Home",
                                 modifier = Modifier.weight(1f)
                             )
@@ -603,7 +622,7 @@ fun AppContentLayout(viewModel: AppViewModel) {
                             FloatingNavItem(
                                 selected = currentRoute == ROUTE_ACCOUNTS,
                                 onClick = { navController.navigate(ROUTE_ACCOUNTS) },
-                                icon = { Icon(Icons.Default.AccountBalanceWallet, contentDescription = "Accounts", modifier = Modifier.size(20.dp), tint = if (currentRoute == ROUTE_ACCOUNTS) PremiumIndigo else Color(0xFF65676B)) },
+                                icon = { Icon(Icons.Default.AccountBalanceWallet, contentDescription = "Accounts", modifier = Modifier.size(24.dp), tint = if (currentRoute == ROUTE_ACCOUNTS) PremiumIndigo else Color(0xFF65676B)) },
                                 label = "Accounts",
                                 modifier = Modifier.weight(1f)
                             )
@@ -639,7 +658,7 @@ fun AppContentLayout(viewModel: AppViewModel) {
                                             imageVector = Icons.Default.Add,
                                             contentDescription = "QuickBooker Action",
                                             tint = Color.White,
-                                            modifier = Modifier.size(20.dp)
+                                            modifier = Modifier.size(24.dp)
                                         )
                                     }
                                     Spacer(modifier = Modifier.height(2.dp))
@@ -657,7 +676,7 @@ fun AppContentLayout(viewModel: AppViewModel) {
                             FloatingNavItem(
                                 selected = currentRoute == ROUTE_TRANSACTIONS,
                                 onClick = { navController.navigate(ROUTE_TRANSACTIONS) },
-                                icon = { Icon(Icons.Default.FormatListBulleted, contentDescription = "Transactions", modifier = Modifier.size(20.dp), tint = if (currentRoute == ROUTE_TRANSACTIONS) PremiumIndigo else Color(0xFF65676B)) },
+                                icon = { Icon(Icons.Default.FormatListBulleted, contentDescription = "Transactions", modifier = Modifier.size(24.dp), tint = if (currentRoute == ROUTE_TRANSACTIONS) PremiumIndigo else Color(0xFF65676B)) },
                                 label = "Ledger",
                                 modifier = Modifier.weight(1f)
                             )
@@ -666,7 +685,7 @@ fun AppContentLayout(viewModel: AppViewModel) {
                             FloatingNavItem(
                                 selected = false,
                                 onClick = { showMenuSheet = true },
-                                icon = { Icon(Icons.Default.Menu, contentDescription = "Menu catalog", modifier = Modifier.size(20.dp), tint = Color(0xFF65676B)) },
+                                icon = { Icon(Icons.Default.Menu, contentDescription = "Menu catalog", modifier = Modifier.size(24.dp), tint = Color(0xFF65676B)) },
                                 label = "More",
                                 modifier = Modifier.weight(1f)
                             )
