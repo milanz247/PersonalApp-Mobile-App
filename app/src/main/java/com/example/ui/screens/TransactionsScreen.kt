@@ -30,6 +30,9 @@ import java.time.Instant
 import java.time.ZoneId
 import android.app.DatePickerDialog
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.animation.core.animateFloatAsState
 import java.util.Calendar
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -250,63 +253,170 @@ fun TransactionsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
 
                     var showDeleteAlert by remember { mutableStateOf(false) }
 
-                    PremiumCard(
+                    var offsetX by remember { mutableStateOf(0f) }
+                    val animatedOffsetX by animateFloatAsState(targetValue = offsetX)
+
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .combinedClickable(
-                                onClick = {},
-                                onLongClick = { showDeleteAlert = true }
-                            )
+                            .height(IntrinsicSize.Min),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier.padding(10.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                        val tagColor = try {
+                            Color(android.graphics.Color.parseColor(corCat?.color ?: "#737373"))
+                        } catch(e: Exception) {
+                            SystemBlue
+                        }
+
+                        // Continuous timeline connection line with category-colored indicator node
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .width(28.dp)
+                                .fillMaxHeight()
                         ) {
-                            Row(
-                                modifier = Modifier.weight(1f),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                            Box(
+                                modifier = Modifier
+                                    .width(1.5.dp)
+                                    .weight(1f)
+                                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(10.dp)
+                                    .background(tagColor, CircleShape)
+                                    .border(1.5.dp, MaterialTheme.colorScheme.background, CircleShape)
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .width(1.5.dp)
+                                    .weight(1f)
+                                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
+                            )
+                        }
+
+                        // Sliding Card Wrapper with backing tactile Action container
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(IntrinsicSize.Min)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .matchParentSize()
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(SystemRed)
+                                    .padding(end = 16.dp),
+                                contentAlignment = Alignment.CenterEnd
                             ) {
-                                CategoryIconBadge(
-                                    iconName = corCat?.icon ?: "settings",
-                                    colorHex = corCat?.color ?: "#737373"
-                                )
-                                Column {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        Text(
-                                            text = corCat?.name ?: tx.type,
-                                            style = MaterialTheme.typography.titleSmall,
-                                            color = MaterialTheme.colorScheme.onSurface
-                                        )
-                                        Box(
-                                            modifier = Modifier
-                                                .size(6.dp)
-                                                .background(
-                                                    color = if (tx.type == "INCOME") SystemGreen else if (tx.type == "EXPENSE") SystemRed else SystemBlue,
-                                                    shape = CircleShape
-                                                )
-                                        )
-                                    }
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "Swipe backer",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(16.dp)
+                                    )
                                     Text(
-                                        text = "${accountName}${if (!tx.note.isNullOrBlank()) " • ${tx.note}" else ""}",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        maxLines = 1
+                                        text = "DELETE",
+                                        color = Color.White,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.ExtraBold
                                     )
                                 }
                             }
 
-                            AmountText(
-                                amount = tx.amount,
-                                currencySymbol = settings.currencySymbol,
-                                type = tx.type,
-                                showSignSignifier = true,
-                                fontSize = 13.sp
-                            )
+                            PremiumCard(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .offset(x = animatedOffsetX.dp)
+                                    .pointerInput(Unit) {
+                                        detectHorizontalDragGestures(
+                                            onDragEnd = {
+                                                if (offsetX < -120f) {
+                                                    showDeleteAlert = true
+                                                }
+                                                offsetX = 0f
+                                            },
+                                            onDragCancel = { offsetX = 0f },
+                                            onHorizontalDrag = { change, dragAmount ->
+                                                change.consume()
+                                                offsetX = (offsetX + dragAmount).coerceIn(-180f, 0f)
+                                            }
+                                        )
+                                    }
+                                    .combinedClickable(
+                                        onClick = {},
+                                        onLongClick = { showDeleteAlert = true }
+                                    )
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)
+                                ) {
+                                    // Colored category tag along the left edge
+                                    Box(
+                                        modifier = Modifier
+                                            .width(5.dp)
+                                            .fillMaxHeight()
+                                            .background(tagColor)
+                                    )
+
+                                    Row(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .padding(vertical = 12.dp, horizontal = 12.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.weight(1f),
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            CategoryIconBadge(
+                                                iconName = corCat?.icon ?: "settings",
+                                                colorHex = corCat?.color ?: "#737373"
+                                            )
+                                            Column {
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                                ) {
+                                                    Text(
+                                                        text = corCat?.name ?: tx.type,
+                                                        style = MaterialTheme.typography.titleSmall,
+                                                        color = MaterialTheme.colorScheme.onSurface
+                                                    )
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .size(6.dp)
+                                                            .background(
+                                                                color = if (tx.type == "INCOME") SystemGreen else if (tx.type == "EXPENSE") SystemRed else SystemBlue,
+                                                                shape = CircleShape
+                                                            )
+                                                    )
+                                                }
+                                                Text(
+                                                    text = "${accountName}${if (!tx.note.isNullOrBlank()) " • ${tx.note}" else ""}",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    maxLines = 1
+                                                )
+                                            }
+                                        }
+
+                                        AmountText(
+                                            amount = tx.amount,
+                                            currencySymbol = settings.currencySymbol,
+                                            type = tx.type,
+                                            showSignSignifier = true,
+                                            fontSize = 13.sp
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
 

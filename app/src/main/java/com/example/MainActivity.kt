@@ -31,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -373,7 +374,7 @@ fun FloatingNavItem(
         ) {
             Box(
                 modifier = Modifier
-                    .size(width = 44.dp, height = 28.dp)
+                    .size(width = 44.dp, height = 24.dp)
                     .graphicsLayer {
                         scaleX = finalScale
                         scaleY = finalScale
@@ -382,12 +383,12 @@ fun FloatingNavItem(
             ) {
                 icon()
             }
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(3.dp))
             Text(
                 text = label,
                 fontSize = 10.sp,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
-                color = if (selected) PremiumIndigo else Color(0xFF65676B),
+                color = if (selected) PremiumIndigo else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                 letterSpacing = 0.1.sp
             )
         }
@@ -554,15 +555,15 @@ fun AppContentLayout(viewModel: AppViewModel) {
                     .fillMaxWidth()
                     .navigationBarsPadding()
                     .padding(start = 12.dp, end = 12.dp, bottom = 12.dp)
+                    .zIndex(100f) // Boost layering
             ) {
                 Surface(
                     shape = RoundedCornerShape(28.dp),
-                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.65f),
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
                     tonalElevation = 6.dp,
                     shadowElevation = 12.dp,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .blur(16.dp)
                         .border(
                             width = 1.2.dp,
                             color = MaterialTheme.colorScheme.outline.copy(alpha = 0.16f),
@@ -572,14 +573,14 @@ fun AppContentLayout(viewModel: AppViewModel) {
                     BoxWithConstraints(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 16.dp, horizontal = 8.dp)
+                            .padding(vertical = 10.dp, horizontal = 8.dp) // Optimized height boundary
                     ) {
                         val containerWidth = maxWidth
                         val targetFraction = when (currentRoute) {
-                            ROUTE_DASHBOARD -> 0f / 5.1f
-                            ROUTE_ACCOUNTS -> 1f / 5.1f
-                            ROUTE_TRANSACTIONS -> 3.1f / 5.1f
-                            else -> 0f / 5.1f
+                            ROUTE_DASHBOARD -> 0f / 5.2f
+                            ROUTE_ACCOUNTS -> 1f / 5.2f
+                            ROUTE_TRANSACTIONS -> 3.2f / 5.2f
+                            else -> 0f / 5.2f
                         }
                         val animatedFraction by animateFloatAsState(
                             targetValue = targetFraction,
@@ -593,8 +594,8 @@ fun AppContentLayout(viewModel: AppViewModel) {
                             Box(
                                 modifier = Modifier
                                     .offset(x = containerWidth * animatedFraction)
-                                    .width(containerWidth / 5.1f)
-                                    .height(48.dp)
+                                    .width(containerWidth / 5.2f)
+                                    .height(54.dp)
                                     .background(
                                         color = PremiumIndigo.copy(alpha = 0.12f),
                                         shape = RoundedCornerShape(24.dp)
@@ -605,7 +606,7 @@ fun AppContentLayout(viewModel: AppViewModel) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(48.dp),
+                                .height(54.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceEvenly
                         ) {
@@ -613,7 +614,7 @@ fun AppContentLayout(viewModel: AppViewModel) {
                             FloatingNavItem(
                                 selected = currentRoute == ROUTE_DASHBOARD,
                                 onClick = { navController.navigate(ROUTE_DASHBOARD) { popUpTo(ROUTE_DASHBOARD) { inclusive = true } } },
-                                icon = { Icon(Icons.Default.Home, contentDescription = "Dashboard", modifier = Modifier.size(24.dp), tint = if (currentRoute == ROUTE_DASHBOARD) PremiumIndigo else Color(0xFF65676B)) },
+                                icon = { Icon(Icons.Default.Home, contentDescription = "Dashboard", modifier = Modifier.size(24.dp), tint = if (currentRoute == ROUTE_DASHBOARD) PremiumIndigo else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)) },
                                 label = "Home",
                                 modifier = Modifier.weight(1f)
                             )
@@ -622,61 +623,19 @@ fun AppContentLayout(viewModel: AppViewModel) {
                             FloatingNavItem(
                                 selected = currentRoute == ROUTE_ACCOUNTS,
                                 onClick = { navController.navigate(ROUTE_ACCOUNTS) },
-                                icon = { Icon(Icons.Default.AccountBalanceWallet, contentDescription = "Accounts", modifier = Modifier.size(24.dp), tint = if (currentRoute == ROUTE_ACCOUNTS) PremiumIndigo else Color(0xFF65676B)) },
+                                icon = { Icon(Icons.Default.AccountBalanceWallet, contentDescription = "Accounts", modifier = Modifier.size(24.dp), tint = if (currentRoute == ROUTE_ACCOUNTS) PremiumIndigo else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)) },
                                 label = "Accounts",
                                 modifier = Modifier.weight(1f)
                             )
 
-                            // 3. Central QuickBooks QuickBooker Action FAB Button
-                            Box(
-                                modifier = Modifier
-                                    .weight(1.1f)
-                                    .fillMaxHeight(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(36.dp)
-                                            .clip(CircleShape)
-                                            .background(
-                                                brush = Brush.linearGradient(
-                                                    colors = listOf(PremiumIndigo, Color(0xFF4F46E5))
-                                                )
-                                            )
-                                            .clickable {
-                                                qAccountId = accounts.firstOrNull()?.id ?: 0L
-                                                qCategoryId = categories.firstOrNull { it.type == qType }?.id
-                                                showQuickAddSheet = true
-                                            },
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Add,
-                                            contentDescription = "QuickBooker Action",
-                                            tint = Color.White,
-                                            modifier = Modifier.size(24.dp)
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Text(
-                                        text = "QuickBook",
-                                        fontSize = 9.sp,
-                                        fontWeight = FontWeight.Black,
-                                        color = PremiumIndigo,
-                                        letterSpacing = 0.2.sp
-                                    )
-                                }
-                            }
+                            // 3. Central QuickBooks QuickBooker Placeholder Gap
+                            Spacer(modifier = Modifier.weight(1.2f))
 
                             // 4. Ledger (Transactions)
                             FloatingNavItem(
                                 selected = currentRoute == ROUTE_TRANSACTIONS,
                                 onClick = { navController.navigate(ROUTE_TRANSACTIONS) },
-                                icon = { Icon(Icons.Default.FormatListBulleted, contentDescription = "Transactions", modifier = Modifier.size(24.dp), tint = if (currentRoute == ROUTE_TRANSACTIONS) PremiumIndigo else Color(0xFF65676B)) },
+                                icon = { Icon(Icons.Default.FormatListBulleted, contentDescription = "Transactions", modifier = Modifier.size(24.dp), tint = if (currentRoute == ROUTE_TRANSACTIONS) PremiumIndigo else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)) },
                                 label = "Ledger",
                                 modifier = Modifier.weight(1f)
                             )
@@ -685,11 +644,64 @@ fun AppContentLayout(viewModel: AppViewModel) {
                             FloatingNavItem(
                                 selected = false,
                                 onClick = { showMenuSheet = true },
-                                icon = { Icon(Icons.Default.Menu, contentDescription = "Menu catalog", modifier = Modifier.size(24.dp), tint = Color(0xFF65676B)) },
+                                icon = { Icon(Icons.Default.Menu, contentDescription = "Menu catalog", modifier = Modifier.size(24.dp), tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)) },
                                 label = "More",
                                 modifier = Modifier.weight(1f)
                             )
                         }
+                    }
+                }
+
+                // Centered outstanding QuickBook button floating over the top border!
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .offset(y = (-18).dp)
+                        .zIndex(110f)
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(54.dp)
+                                .shadow(
+                                    elevation = 12.dp,
+                                    shape = CircleShape,
+                                    clip = false,
+                                    ambientColor = PremiumIndigo.copy(alpha = 0.4f),
+                                    spotColor = PremiumIndigo
+                                )
+                                .clip(CircleShape)
+                                .background(
+                                    brush = Brush.linearGradient(
+                                        colors = listOf(PremiumIndigo, Color(0xFF4F46E5))
+                                    )
+                                )
+                                .border(2.dp, Color.White.copy(alpha = 0.4f), CircleShape)
+                                .clickable {
+                                    qAccountId = accounts.firstOrNull()?.id ?: 0L
+                                    qCategoryId = categories.firstOrNull { it.type == qType }?.id
+                                    showQuickAddSheet = true
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "QuickBooker Action",
+                                tint = Color.White,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "QuickBook",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Black,
+                            color = PremiumIndigo,
+                            letterSpacing = 0.2.sp
+                        )
                     }
                 }
             }
@@ -741,12 +753,17 @@ fun AppContentLayout(viewModel: AppViewModel) {
         if (showMenuSheet) {
             ModalBottomSheet(
                 onDismissRequest = { showMenuSheet = false },
-                shape = RoundedCornerShape(16.dp, 16.dp, 0.dp, 0.dp),
-                containerColor = MaterialTheme.colorScheme.background
+                shape = RoundedCornerShape(24.dp, 24.dp, 0.dp, 0.dp),
+                containerColor = MaterialTheme.colorScheme.surface
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .border(
+                            1.dp,
+                            MaterialTheme.colorScheme.outline.copy(alpha = 0.15f),
+                            RoundedCornerShape(24.dp, 24.dp, 0.dp, 0.dp)
+                        )
                         .padding(horizontal = 24.dp, vertical = 12.dp)
                         .padding(bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -805,12 +822,17 @@ fun AppContentLayout(viewModel: AppViewModel) {
         if (showQuickAddSheet) {
             ModalBottomSheet(
                 onDismissRequest = { showQuickAddSheet = false },
-                shape = RoundedCornerShape(16.dp, 16.dp, 0.dp, 0.dp),
-                containerColor = MaterialTheme.colorScheme.background
+                shape = RoundedCornerShape(24.dp, 24.dp, 0.dp, 0.dp),
+                containerColor = MaterialTheme.colorScheme.surface
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .border(
+                            1.dp,
+                            MaterialTheme.colorScheme.outline.copy(alpha = 0.15f),
+                            RoundedCornerShape(24.dp, 24.dp, 0.dp, 0.dp)
+                        )
                         .padding(24.dp)
                         .padding(bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -955,9 +977,9 @@ fun AppContentLayout(viewModel: AppViewModel) {
     // Custom premium animated alert Overlay
     AnimatedVisibility(
         visible = activeMessage != null,
-        enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-        exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
-        modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 86.dp).zIndex(99f)
+        enter = scaleIn(initialScale = 0.85f) + fadeIn(),
+        exit = scaleOut(targetScale = 0.85f) + fadeOut(),
+        modifier = Modifier.align(Alignment.Center).zIndex(99f)
     ) {
         activeMessage?.let { msg ->
             val gradientColors = if (activeMessageType == "SUCCESS") {
@@ -966,16 +988,23 @@ fun AppContentLayout(viewModel: AppViewModel) {
                 listOf(Color(0xFFEF4444), Color(0xFFDC2626))
             }
             Card(
-                shape = RoundedCornerShape(16.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-                modifier = Modifier.fillMaxWidth(0.9f).widthIn(max = 450.dp)
+                shape = RoundedCornerShape(24.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 18.dp),
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .widthIn(max = 450.dp)
+                    .border(
+                        1.5.dp,
+                        Color.White.copy(alpha = 0.25f),
+                        RoundedCornerShape(24.dp)
+                    )
             ) {
                 Row(
                     modifier = Modifier
                         .background(Brush.linearGradient(gradientColors))
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
                     Icon(
                         imageVector = if (activeMessageType == "SUCCESS") Icons.Default.CheckCircle else Icons.Default.Warning,

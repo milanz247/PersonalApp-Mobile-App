@@ -131,18 +131,36 @@ fun DashboardScreen(
             )
         }
 
-        // Total Balance Hero Card (Dynamic Gradient Canvas)
+        // Total Balance Hero Card (Dynamic Gradient Canvas with Asymmetric Lines)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(20.dp))
+                .clip(RoundedCornerShape(24.dp))
                 .background(
                     Brush.linearGradient(
-                        colors = listOf(PremiumIndigo, Color(0xFF4F46E5))
+                        colors = listOf(PremiumIndigo, Color(0xFF1E293B)),
+                        start = androidx.compose.ui.geometry.Offset(0f, 0f),
+                        end = androidx.compose.ui.geometry.Offset(1000f, 1000f)
                     )
                 )
                 .testTag("total_balance_card")
         ) {
+            // Asymmetric modern background lines / overlays
+            androidx.compose.foundation.Canvas(modifier = Modifier.matchParentSize()) {
+                val width = size.width
+                val height = size.height
+                drawCircle(
+                    color = Color.White.copy(alpha = 0.05f),
+                    radius = width * 0.45f,
+                    center = androidx.compose.ui.geometry.Offset(width * 0.95f, height * 0.15f)
+                )
+                drawCircle(
+                    color = Color.White.copy(alpha = 0.03f),
+                    radius = width * 0.3f,
+                    center = androidx.compose.ui.geometry.Offset(width * 0.1f, height * 0.85f)
+                )
+            }
+
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -261,34 +279,28 @@ fun DashboardScreen(
             }
         }
 
-        // Overspend Warnings Alert Block
+        // Overspend Warnings & Progressive Budget Indicators
         if (overspendAlerts.isNotEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(SystemRed.copy(alpha = 0.05f))
-                    .border(1.dp, SystemRed.copy(alpha = 0.25f), RoundedCornerShape(14.dp))
-            ) {
+            PremiumCard(modifier = Modifier.fillMaxWidth()) {
                 Column(
                     modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Warning,
                             contentDescription = "Alert",
                             tint = SystemRed,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(18.dp)
                         )
                         Text(
                             text = "BUDGET OVERSPEND LIMIT EXCEEDED",
-                            fontSize = 9.sp,
+                            fontSize = 10.sp,
                             fontWeight = FontWeight.Black,
-                            letterSpacing = 1.sp,
+                            letterSpacing = 1.2.sp,
                             color = SystemRed
                         )
                     }
@@ -296,24 +308,91 @@ fun DashboardScreen(
                     overspendAlerts.forEach { alert ->
                         val cat = alert.first
                         val exceededBy = alert.second
-                        Row(
+                        val budget = budgets.firstOrNull { it.categoryId == cat.id }
+                        val budgetLimit = budget?.amount ?: exceededBy
+                        val spent = budgetLimit + exceededBy
+                        val progress = if (budgetLimit > 0) (spent / budgetLimit).toFloat() else 1.5f
+                        
+                        val categoryColor = try {
+                            Color(android.graphics.Color.parseColor(cat.color))
+                        } catch (e: Exception) {
+                            SystemRed
+                        }
+
+                        Column(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            Text(
-                                text = cat.name,
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = "Exceeded by ${settings.currencySymbol}${String.format("%,.2f", exceededBy)}",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = SystemRed,
-                                fontFamily = FontFamily.Monospace
-                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(8.dp)
+                                            .background(categoryColor, CircleShape)
+                                    )
+                                    Text(
+                                        text = cat.name.uppercase(),
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+
+                                // Interactive/Dynamic percentage flag badge
+                                Box(
+                                    modifier = Modifier
+                                        .background(SystemRed.copy(alpha = 0.15f), RoundedCornerShape(6.dp))
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        text = "${(progress * 100).toInt()}% spent",
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = SystemRed
+                                    )
+                                }
+                            }
+
+                            // Progressive smooth-corner linear progress bar
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(8.dp)
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxHeight()
+                                        .fillMaxWidth(progress.coerceIn(0f, 1f))
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(SystemRed)
+                                )
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "Spent: ${settings.currencySymbol}${String.format("%,.0f", spent)}",
+                                    fontSize = 10.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = "Limit exceeded by: ${settings.currencySymbol}${String.format("%,.0f", exceededBy)}",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = SystemRed
+                                )
+                            }
                         }
                     }
                 }

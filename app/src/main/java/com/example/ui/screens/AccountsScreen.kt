@@ -18,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
@@ -26,6 +27,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.style.TextAlign
 import com.example.data.model.Account
 import com.example.ui.AppViewModel
 import com.example.ui.components.*
@@ -216,211 +219,227 @@ fun AccountsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
 
         Spacer(modifier = Modifier.height(4.dp))
 
-        walletAccount?.let { wall ->
+        // Virtual Accounts & Wallets custom spring-stacked layout
+        val accountsList = remember(walletAccount, bankAccountsList) {
+            listOfNotNull(walletAccount) + bankAccountsList
+        }
+
+        var isStackExpanded by remember { mutableStateOf(false) }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Text(
-                text = "CASH IN HAND & POCKET",
+                text = "MY VIRTUAL WALLETS & CARDS",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            PremiumCard(
-                modifier = Modifier.fillMaxWidth().testTag("wallet_card")
+            TextButton(
+                onClick = { isStackExpanded = !isStackExpanded },
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
             ) {
-                Column {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(42.dp)
-                                    .background(SystemGreen.copy(alpha = 0.08f), CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.AccountBalanceWallet,
-                                    contentDescription = null,
-                                    tint = SystemGreen,
-                                    modifier = Modifier.size(22.dp)
-                                )
-                            }
-                            Column {
-                                Text(
-                                    text = wall.name,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = "On-Device Paper Ledger",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                        AmountText(
-                            amount = wall.balance,
-                            currencySymbol = settings.currencySymbol,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Black
-                        )
-                    }
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
-                    
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 6.dp),
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        TextButton(
-                            onClick = { viewModel.zeroCashWallet() },
-                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Refresh,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "Reset Wallet to Zero",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                }
+                Icon(
+                    imageVector = if (isStackExpanded) Icons.Default.Refresh else Icons.Default.ArrowDropDown,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = PremiumIndigo
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = if (isStackExpanded) "Stack Cards" else "Expand Wallet",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = PremiumIndigo
+                )
             }
         }
 
-        // Commercial Bank accounts list
-        if (bankAccountsList.isNotEmpty()) {
-            Text(
-                text = "COMMERCIAL SAVINGS & CHECKING",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+        if (accountsList.isEmpty()) {
+            EmptyState(
+                title = "No Wallets or Banks Found",
+                description = "Securely setup cash stores and banking cards offline.",
+                icon = Icons.Default.AccountBalanceWallet,
+                actionLabel = "Add Bank",
+                onActionClick = { showAddBankDialog = true }
             )
-            bankAccountsList.forEach { bank ->
-                var showDeleteConfirm by remember { mutableStateOf(false) }
-
-                // Customized physical-credit-card look-and-feel card
-                PremiumCard(modifier = Modifier.fillMaxWidth()) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(18.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            modifier = Modifier.weight(1f),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(42.dp)
-                                    .background(SystemBlue.copy(alpha = 0.08f), CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.AccountBalance,
-                                    contentDescription = null,
-                                    tint = SystemBlue,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                            Column {
-                                Text(
-                                    text = bank.name,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = "${bank.bankName} • ${bank.accountNumber ?: "No account details"}",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+        } else {
+            if (!isStackExpanded) {
+                // Collapsed physical stacked look: Cards overlap using negative offset + smaller scale scaling
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(280.dp)
+                        .clickable { isStackExpanded = true }
+                        .padding(bottom = 12.dp)
+                ) {
+                    accountsList.forEachIndexed { index, account ->
+                        val visualIndex = index
+                        val yOffset = (40 * visualIndex).dp
+                        val scale = (1f - (0.04f * visualIndex)).coerceIn(0.8f, 1f)
+                        
+                        val gradientColors = when (account.type) {
+                            "WALLET" -> listOf(Color(0xFF047857), Color(0xFF10B981)) // Emerald Green
+                            else -> when (index % 4) {
+                                0 -> listOf(Color(0xFF1E1B4B), Color(0xFF312E81)) // Dark Indigo
+                                1 -> listOf(Color(0xFF0F172A), Color(0xFF1E293B)) // Deep Slate
+                                2 -> listOf(Color(0xFF581C87), Color(0xFF6B21A8)) // Royal Amethyst
+                                else -> listOf(Color(0xFF881337), Color(0xFF9F1239)) // Rosewood Crimson
                             }
                         }
 
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                        val digits = if (account.type == "WALLET") "CASH WALLET" else account.accountNumber ?: "•••• •••• •••• 1234"
+                        
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .offset(y = yOffset)
+                                .graphicsLayer {
+                                    scaleX = scale
+                                    scaleY = scale
+                                    translationY = yOffset.toPx()
+                                }
+                                .zIndex((accountsList.size - visualIndex).toFloat())
+                                .aspectRatio(1.586f)
+                                .clip(RoundedCornerShape(20.dp)),
+                            elevation = CardDefaults.cardElevation(defaultElevation = (12 - 2 * visualIndex).dp)
                         ) {
-                            AmountText(
-                                amount = bank.balance,
+                            VirtualCardItem(
+                                name = account.name,
+                                bankName = account.bankName ?: "Cash Ledger",
+                                accountNumber = digits,
+                                balance = account.balance,
                                 currencySymbol = settings.currencySymbol,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold
+                                holderName = settings.userName,
+                                tagType = if (account.type == "WALLET") "CASH STORE" else "DEBIT ACCOUNT",
+                                gradientColors = gradientColors
                             )
-                            IconButton(
-                                onClick = { showDeleteConfirm = true },
-                                modifier = Modifier.size(28.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = "Delete account",
-                                    tint = SystemRed,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
                         }
                     }
                 }
-
-                // Delete Confirmation Popups
-                if (showDeleteConfirm) {
-                    AlertDialog(
-                        onDismissRequest = { showDeleteConfirm = false },
-                        shape = RoundedCornerShape(16.dp),
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        title = {
-                            Text(
-                                "Delete Bank Card",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold
-                            )
-                        },
-                        text = {
-                            Text(
-                                "Are you sure you want to permanently detach '${bank.name}'? All underlying ledger journals referencing this entity will lose their account balance mapping.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        },
-                        confirmButton = {
-                            TextButton(onClick = {
-                                showDeleteConfirm = false
-                                viewModel.deleteBankAccount(bank.id)
-                            }) {
-                                Text("Delete", color = SystemRed, fontWeight = FontWeight.Bold)
-                            }
-                        },
-                        dismissButton = {
-                            TextButton(onClick = { showDeleteConfirm = false }) {
-                                Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                
+                Text(
+                    text = "Tap on the card stack to slide open the physical wallet",
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
+                )
+            } else {
+                // Stack expanded layout: Cards laid out sequentially with action control banners
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    accountsList.forEachIndexed { index, account ->
+                        val gradientColors = when (account.type) {
+                            "WALLET" -> listOf(Color(0xFF047857), Color(0xFF10B981))
+                            else -> when (index % 4) {
+                                0 -> listOf(Color(0xFF1E1B4B), Color(0xFF312E81))
+                                1 -> listOf(Color(0xFF0F172A), Color(0xFF1E293B))
+                                2 -> listOf(Color(0xFF581C87), Color(0xFF6B21A8))
+                                else -> listOf(Color(0xFF881337), Color(0xFF9F1239))
                             }
                         }
-                    )
+
+                        val digits = if (account.type == "WALLET") "CASH WALLET" else account.accountNumber ?: "•••• •••• •••• 1234"
+                        var showDeleteConfirm by remember { mutableStateOf(false) }
+
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f), RoundedCornerShape(24.dp))
+                                .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f), RoundedCornerShape(24.dp))
+                                .padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            VirtualCardItem(
+                                name = account.name,
+                                bankName = account.bankName ?: "Cash Ledger",
+                                accountNumber = digits,
+                                balance = account.balance,
+                                currencySymbol = settings.currencySymbol,
+                                holderName = settings.userName,
+                                tagType = if (account.type == "WALLET") "CASH STORE" else "DEBIT ACCOUNT",
+                                gradientColors = gradientColors
+                            )
+
+                            // Action footer for each card
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                if (account.type == "WALLET") {
+                                    TextButton(
+                                        onClick = { viewModel.zeroCashWallet() },
+                                        colors = ButtonDefaults.textButtonColors(contentColor = SystemRed)
+                                    ) {
+                                        Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(15.dp))
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("Reset Cash Wallet to Zero", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                } else {
+                                    TextButton(
+                                        onClick = { showDeleteConfirm = true },
+                                        colors = ButtonDefaults.textButtonColors(contentColor = SystemRed)
+                                    ) {
+                                        Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(15.dp))
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("Delete Bank Account", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+                        }
+
+                        if (showDeleteConfirm) {
+                            AlertDialog(
+                                onDismissRequest = { showDeleteConfirm = false },
+                                shape = RoundedCornerShape(24.dp),
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                title = {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(36.dp)
+                                                .background(SystemRed.copy(alpha = 0.1f), CircleShape),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(Icons.Default.Delete, contentDescription = null, tint = SystemRed, modifier = Modifier.size(18.dp))
+                                        }
+                                        Text("Delete '${account.name}'?", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                                    }
+                                },
+                                text = {
+                                    Text(
+                                        "Are you sure you want to permanently detach this card and delete associated savings entries? Ledger journal records balance mappings will be adjusted.",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                },
+                                confirmButton = {
+                                    Button(
+                                        onClick = {
+                                            showDeleteConfirm = false
+                                            viewModel.deleteBankAccount(account.id)
+                                        },
+                                        colors = ButtonDefaults.buttonColors(containerColor = SystemRed),
+                                        shape = RoundedCornerShape(10.dp)
+                                    ) {
+                                        Text("Delete account", fontWeight = FontWeight.Bold)
+                                    }
+                                },
+                                dismissButton = {
+                                    TextButton(onClick = { showDeleteConfirm = false }) {
+                                        Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                }
+                            )
+                        }
+                    }
                 }
             }
-        } else if (bankAccountsList.isEmpty()) {
-            EmptyState(
-                title = "No Commercial Banks Linked",
-                description = "Securely map and keep track of unlimited checking and credit accounts offline.",
-                icon = Icons.Default.AccountBalance,
-                actionLabel = "Add First Account",
-                onActionClick = { showAddBankDialog = true }
-            )
         }
 
         // Add Dialog Sheet
@@ -756,6 +775,140 @@ fun AccountsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
                     }
                 }
             )
+        }
+    }
+}
+
+@Composable
+fun VirtualCardItem(
+    name: String,
+    bankName: String,
+    accountNumber: String,
+    balance: Double,
+    currencySymbol: String,
+    holderName: String,
+    tagType: String,
+    gradientColors: List<Color>,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(Brush.linearGradient(colors = gradientColors))
+    ) {
+        // Translucent radial visual accent overlay
+        androidx.compose.foundation.Canvas(modifier = Modifier.matchParentSize()) {
+            val w = size.width
+            val h = size.height
+            drawCircle(
+                color = Color.White.copy(alpha = 0.04f),
+                radius = w * 0.45f,
+                center = androidx.compose.ui.geometry.Offset(w * 0.95f, h * 0.15f)
+            )
+            drawCircle(
+                color = Color.White.copy(alpha = 0.03f),
+                radius = w * 0.28f,
+                center = androidx.compose.ui.geometry.Offset(w * 0.12f, h * 0.88f)
+            )
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(20.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            // Top Row: Brand labels & smart gold chip representation
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = bankName.uppercase(),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Black,
+                        color = Color.White,
+                        letterSpacing = 1.2.sp
+                    )
+                    Text(
+                        text = tagType,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White.copy(alpha = 0.6f)
+                    )
+                }
+
+                // Simulated smart micro-chip
+                Box(
+                    modifier = Modifier
+                        .size(width = 34.dp, height = 24.dp)
+                        .background(Color(0xFFF1C40F).copy(alpha = 0.9f), RoundedCornerShape(6.dp))
+                        .border(1.dp, Color.White.copy(alpha = 0.3f), RoundedCornerShape(6.dp))
+                ) {
+                    androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+                        val w = size.width
+                        val h = size.height
+                        drawLine(Color.Black.copy(alpha = 0.12f), androidx.compose.ui.geometry.Offset(w * 0.5f, 0f), androidx.compose.ui.geometry.Offset(w * 0.5f, h), 1f)
+                        drawLine(Color.Black.copy(alpha = 0.12f), androidx.compose.ui.geometry.Offset(0f, h * 0.5f), androidx.compose.ui.geometry.Offset(w, h * 0.5f), 1f)
+                    }
+                }
+            }
+
+            // Middle Row: Card digits / Details formatted cleanly
+            Column {
+                Text(
+                    text = accountNumber.chunked(4).joinToString("   "),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White.copy(alpha = 0.85f),
+                    fontFamily = FontFamily.Monospace,
+                    letterSpacing = 1.2.sp
+                )
+            }
+
+            // Bottom Row: Holder name and balance pairing
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom
+            ) {
+                Column {
+                    Text(
+                        text = "CARDHOLDER",
+                        fontSize = 8.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color.White.copy(alpha = 0.5f),
+                        letterSpacing = 0.8.sp
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = holderName.uppercase(),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = "CURRENT BALANCE",
+                        fontSize = 8.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color.White.copy(alpha = 0.5f),
+                        letterSpacing = 0.8.sp
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "${currencySymbol}${String.format("%,.2f", balance)}",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Black,
+                        color = Color.White,
+                        fontFamily = FontFamily.Monospace
+                    )
+                }
+            }
         }
     }
 }
