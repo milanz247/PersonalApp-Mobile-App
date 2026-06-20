@@ -469,83 +469,114 @@ fun AppContentLayout(viewModel: AppViewModel) {
             )
         },
         bottomBar = {
-            // Section 6: Home background bar on phones with high-density styling
+            // Elegant revamped central QuickBooks-style Bottom Navigation Bar
             NavigationBar(
                 containerColor = MaterialTheme.colorScheme.background,
-                tonalElevation = 0.dp,
-                modifier = Modifier.drawBehind {
-                    drawLine(
-                        color = Color(0xFFECECEC),
-                        start = Offset(0f, 0f),
-                        end = Offset(size.width, 0f),
-                        strokeWidth = 1.dp.toPx()
-                    )
-                },
+                tonalElevation = 4.dp,
+                modifier = Modifier
+                    .height(84.dp)
+                    .drawBehind {
+                        // Soft light-gray border on top of bar for beautiful division
+                        drawLine(
+                            color = Color(0xFFECECEC),
+                            start = Offset(0f, 0f),
+                            end = Offset(size.width, 0f),
+                            strokeWidth = 1.2.dp.toPx()
+                        )
+                    },
                 windowInsets = WindowInsets.navigationBars
             ) {
                 val itemColors = NavigationBarItemDefaults.colors(
-                    indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                    selectedIconColor = MaterialTheme.colorScheme.primary,
-                    unselectedIconColor = Color(0xFF65676B), // Facebook-style secondary gray
-                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                    indicatorColor = PremiumIndigo.copy(alpha = 0.12f),
+                    selectedIconColor = PremiumIndigo,
+                    unselectedIconColor = Color(0xFF65676B),
+                    selectedTextColor = PremiumIndigo,
                     unselectedTextColor = Color(0xFF65676B)
                 )
 
-                // Dashboard
+                // 1. Dashboard (Home)
                 NavigationBarItem(
                     selected = currentRoute == ROUTE_DASHBOARD,
                     onClick = { navController.navigate(ROUTE_DASHBOARD) { popUpTo(ROUTE_DASHBOARD) { inclusive = true } } },
                     icon = { Icon(Icons.Default.Home, contentDescription = "Dashboard") },
-                    label = { Text("Home", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
+                    label = { Text("Home", fontSize = 10.sp, fontWeight = FontWeight.SemiBold) },
                     colors = itemColors
                 )
 
-                // Accounts
+                // 2. Accounts
                 NavigationBarItem(
                     selected = currentRoute == ROUTE_ACCOUNTS,
                     onClick = { navController.navigate(ROUTE_ACCOUNTS) },
                     icon = { Icon(Icons.Default.AccountBalanceWallet, contentDescription = "Accounts") },
-                    label = { Text("Accounts", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
+                    label = { Text("Accounts", fontSize = 10.sp, fontWeight = FontWeight.SemiBold) },
                     colors = itemColors
                 )
 
-                // Transactions
+                // 3. Central QuickBooks QuickBooker Action FAB Button
+                Box(
+                    modifier = Modifier
+                        .weight(1.1f)
+                        .fillMaxHeight(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(50.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    brush = Brush.linearGradient(
+                                        colors = listOf(PremiumIndigo, Color(0xFF4F46E5))
+                                    )
+                                )
+                                .clickable {
+                                    qAccountId = accounts.firstOrNull()?.id ?: 0L
+                                    qCategoryId = categories.firstOrNull { it.type == qType }?.id
+                                    showQuickAddSheet = true
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "QuickBooker Action",
+                                tint = Color.White,
+                                modifier = Modifier.size(26.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "QuickBook",
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Black,
+                            color = PremiumIndigo,
+                            letterSpacing = 0.2.sp
+                        )
+                    }
+                }
+
+                // 4. Ledger (Transactions)
                 NavigationBarItem(
                     selected = currentRoute == ROUTE_TRANSACTIONS,
                     onClick = { navController.navigate(ROUTE_TRANSACTIONS) },
                     icon = { Icon(Icons.Default.FormatListBulleted, contentDescription = "Transactions") },
-                    label = { Text("Ledger", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
+                    label = { Text("Ledger", fontSize = 10.sp, fontWeight = FontWeight.SemiBold) },
                     colors = itemColors
                 )
 
-                // Menu button triggers secondary drawer bottom sheet
+                // 5. Menu
                 NavigationBarItem(
                     selected = false,
                     onClick = { showMenuSheet = true },
                     icon = { Icon(Icons.Default.Menu, contentDescription = "Menu catalog") },
-                    label = { Text("Menu", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
+                    label = { Text("More", fontSize = 10.sp, fontWeight = FontWeight.SemiBold) },
                     colors = itemColors
                 )
             }
         },
-        floatingActionButton = {
-            // Active FAB on Home and LEDGER screens
-            if (currentRoute == ROUTE_DASHBOARD || currentRoute == ROUTE_TRANSACTIONS) {
-                FloatingActionButton(
-                    onClick = {
-                        qAccountId = accounts.firstOrNull()?.id ?: 0L
-                        qCategoryId = categories.firstOrNull { it.type == qType }?.id
-                        showQuickAddSheet = true
-                    },
-                    modifier = Modifier.testTag("quick_add_fab"),
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Icon(imageVector = Icons.Default.Add, contentDescription = "Quick Add Entry")
-                }
-            }
-        }
+        floatingActionButton = {}
     ) { paddingValues ->
         // NavHost mapping back to View Composables with beautiful premium gradient backdrop
         NavHost(
@@ -1003,16 +1034,16 @@ fun AppStartupSplashScreen() {
 
     LaunchedEffect(Unit) {
         while (true) {
-            animValue = 1.1f
-            kotlinx.coroutines.delay(900)
-            animValue = 0.85f
-            kotlinx.coroutines.delay(900)
+            animValue = 1.08f
+            kotlinx.coroutines.delay(1000)
+            animValue = 0.88f
+            kotlinx.coroutines.delay(1000)
         }
     }
 
     LaunchedEffect(Unit) {
         while (true) {
-            rotationValue += 3.6f
+            rotationValue += 2.2f
             kotlinx.coroutines.delay(16)
         }
     }
@@ -1024,7 +1055,7 @@ fun AppStartupSplashScreen() {
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = Color(0xFF0F0C20)
+        color = Color(0xFF07050A) // Ultra pure pitch black-slate hybrid context to eliminate any brief latency white flash
     ) {
         Box(
             modifier = Modifier
@@ -1032,9 +1063,9 @@ fun AppStartupSplashScreen() {
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            Color(0xFF0B0914),
-                            Color(0xFF120E2C),
-                            Color(0xFF18133B)
+                            Color(0xFF060408),
+                            Color(0xFF0F0C20),
+                            Color(0xFF0A0815)
                         )
                     )
                 ),
@@ -1042,19 +1073,24 @@ fun AppStartupSplashScreen() {
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.fillMaxSize().padding(24.dp)
             ) {
+                Spacer(modifier = Modifier.weight(1.2f))
+
+                // Custom Monogram Circle Vault containing "Le"
                 Box(
                     modifier = Modifier
-                        .size(140.dp)
+                        .size(135.dp)
                         .drawBehind {
+                            // Elegant gold and purple metallic rings
                             drawCircle(
                                 brush = Brush.linearGradient(
-                                    colors = listOf(Color(0xFFFFDF00), Color(0xFFF59E0B))
+                                    colors = listOf(Color(0xFFFFD700), Color(0xFF6366F1))
                                 ),
-                                radius = size.minDimension / 2.1f,
+                                radius = size.minDimension / 2.05f,
                                 style = androidx.compose.ui.graphics.drawscope.Stroke(
-                                    width = 3.dp.toPx()
+                                    width = 3.2.dp.toPx()
                                 )
                             )
                         },
@@ -1062,31 +1098,46 @@ fun AppStartupSplashScreen() {
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(80.dp)
+                            .size(90.dp)
                             .graphicsLayer {
                                 scaleX = scale
                                 scaleY = scale
-                                rotationZ = rotationValue * 0.12f
+                                rotationZ = rotationValue * 0.08f
                             },
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.AccountBalance,
-                            contentDescription = "Ledger Logo Shimmer",
-                            tint = Color(0xFFFBBF24),
-                            modifier = Modifier.size(54.dp)
-                        )
+                        // Exquisite "Le" Monogram Logo Font Representation
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = "L",
+                                fontSize = 48.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFFFD700), // Pure Gold L
+                                style = MaterialTheme.typography.headlineLarge
+                            )
+                            Text(
+                                text = "e",
+                                fontSize = 38.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.White, // Premium White e
+                                style = MaterialTheme.typography.headlineMedium,
+                                modifier = Modifier.offset(x = (-3).dp, y = 4.dp)
+                            )
+                        }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(36.dp))
+                Spacer(modifier = Modifier.height(28.dp))
 
                 Text(
                     text = "L E D G E R",
-                    fontSize = 24.sp,
+                    fontSize = 26.sp,
                     fontWeight = FontWeight.Black,
                     color = Color.White,
-                    letterSpacing = 6.sp
+                    letterSpacing = 7.sp
                 )
 
                 Spacer(modifier = Modifier.height(6.dp))
@@ -1094,28 +1145,52 @@ fun AppStartupSplashScreen() {
                 Text(
                     text = "DOUBLE-ENTRY VAULT ENGINE",
                     fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.ExtraBold,
                     color = Color(0xFF818CF8),
-                    letterSpacing = 1.8.sp
+                    letterSpacing = 2.sp
                 )
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(36.dp))
 
                 CircularProgressIndicator(
                     modifier = Modifier.size(24.dp),
                     strokeWidth = 2.5.dp,
-                    color = Color(0xFFF59E0B),
-                    trackColor = Color(0xFF312E81)
+                    color = Color(0xFFFBBF24),
+                    trackColor = Color(0xFF1E1B4B)
                 )
 
                 Spacer(modifier = Modifier.height(14.dp))
 
                 Text(
-                    text = "Bootstrapping state safely...",
+                    text = "Initializing Vault Handshake...",
                     fontSize = 11.sp,
-                    color = Color.White.copy(alpha = 0.4f),
-                    letterSpacing = 0.5.sp
+                    color = Color.White.copy(alpha = 0.45f),
+                    letterSpacing = 0.4.sp
                 )
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                // Signature & Version segment at the bottom as requested
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        text = "DEVELOPED BY MILAN MADUSANKA",
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Black,
+                        color = Color(0xFF94A3B8),
+                        letterSpacing = 1.3.sp
+                    )
+                    Text(
+                        text = "Version 1.25.0 - Premium Edition",
+                        fontSize = 8.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White.copy(alpha = 0.35f),
+                        letterSpacing = 0.5.sp
+                    )
+                }
+                Spacer(modifier = Modifier.height(24.dp))
             }
         }
     }

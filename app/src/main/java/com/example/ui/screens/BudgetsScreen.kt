@@ -4,9 +4,11 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Adjust
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -226,14 +228,33 @@ fun BudgetsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
             val cat = showEditDialog!!
             AlertDialog(
                 onDismissRequest = { showEditDialog = null },
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(20.dp),
                 containerColor = MaterialTheme.colorScheme.surface,
                 title = {
-                    Text(
-                        "Set Expense Budget",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .background(PremiumIndigo.copy(alpha = 0.1f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Adjust,
+                                contentDescription = null,
+                                tint = PremiumIndigo,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Text(
+                            "Set Expense Budget",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 },
                 text = {
                     Column(

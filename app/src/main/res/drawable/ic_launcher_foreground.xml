@@ -6,51 +6,58 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Glowing premium outer ring helper -->
+    <!-- Premium Luxury Outer Glowing Circle Ring -->
     <path
-        android:pathData="M54,16 A38,38 0 1,1 53.9,16 Z"
-        android:strokeWidth="1.5"
-        android:strokeColor="#3F377A"/>
+        android:pathData="M54,12 A42,42 0 1,1 53.9,12 Z"
+        android:strokeWidth="2.5"
+        android:strokeColor="#4F46E5" />
 
-    <!-- Premium Luxury Ledger book/vault silhouette with golden gradients -->
     <path
-        android:pathData="M34,28 c-3,0 -5,2 -5,5 v42 c0,3 2,5 5,5 h40 c3,0 5,-2 5,-5 v-42 c0,-3 -2,-5 -5,-5 Z"
-        android:fillColor="#151329" />
+        android:pathData="M54,15 A39,39 0 1,1 53.9,15 Z"
+        android:strokeWidth="1.0"
+        android:strokeColor="#FBBF24" />
 
-    <!-- Ledger Spine & Accent Line -->
+    <!-- Ledger Vault Shaded Shield Background -->
     <path
-        android:pathData="M29,33 v42 c0,3 2,5 5,5 h4 v-52 h-4 c-3,0 -5,2 -5,5 Z">
+        android:pathData="M54,20 L80,30 V56 C80,72 68,84 54,88 C40,84 28,72 28,56 V30 Z">
         <aapt:attr name="android:fillColor">
             <gradient
-                android:startX="29"
-                android:startY="33"
-                android:endX="38"
-                android:endY="80"
+                android:startX="54"
+                android:startY="20"
+                android:endX="54"
+                android:endY="88"
                 android:type="linear">
-                <item android:offset="0.0" android:color="#FFD700" />
-                <item android:offset="1.0" android:color="#FFA500" />
+                <item android:offset="0.0" android:color="#1A153B" />
+                <item android:offset="1.0" android:color="#0B0914" />
             </gradient>
         </aapt:attr>
     </path>
 
-    <!-- Ledger Cover Right Half -->
+    <!-- Glowing Indigo Backing for Monogram -->
     <path
-        android:pathData="M38,28 h36 c3,0 5,2 5,5 v42 c0,3 -2,5 -5,5 h-36 Z"
-        android:fillColor="#1C183F" />
-
-    <!-- Isometric Ledger Pages Accent (the white paper margin) -->
-    <path
-        android:pathData="M73,31 h2 v40 h-2 Z"
-        android:fillColor="#E2E8F0" />
-
-    <!-- Gold Premium Embossed Seal / Vault Ring on Cover -->
-    <path
-        android:pathData="M56,54 a12,12 0 1,1 24,0 a12,12 0 1,1 -24,0">
+        android:pathData="M54,26 L74,34 V54 C74,66 64,76 54,80 C44,76 34,66 34,54 V34 Z">
         <aapt:attr name="android:fillColor">
             <gradient
-                android:startX="56"
-                android:startY="42"
-                android:endX="80"
+                android:startX="54"
+                android:startY="26"
+                android:endX="54"
+                android:endY="80"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#2E2270" />
+                <item android:offset="1.0" android:color="#140E34" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- STYLIZED 'L' MONOGRAM PATH WITH GOLD METALLIC GRADIENT -->
+    <!-- Elegantly drawn 'L' with a flowing copper-gold serif block -->
+    <path
+        android:pathData="M40,36 h7 v24 h11 v6 h-18 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="40"
+                android:startY="36"
+                android:endX="58"
                 android:endY="66"
                 android:type="linear">
                 <item android:offset="0.0" android:color="#FFE875" />
@@ -60,58 +67,48 @@
         </aapt:attr>
     </path>
 
-    <!-- Inner dark seal core -->
+    <!-- STYLIZED 'e' MONOGRAM PATH WITH METALLIC PLATINUM/GOLD HIGHLIGHTS -->
+    <!-- Beautiful lowercase modern cursive 'e' intersecting harmoniously of Ledger -->
     <path
-        android:pathData="M60,54 a8,8 0 1,1 16,0 a8,8 0 1,1 -16,0"
-        android:fillColor="#151329" />
-
-    <!-- Elegant 'L' branding inside the ledger cover in pure gold -->
-    <path
-        android:pathData="M65,49 v9 h5 v1.5 h-6.5 v-10.5 Z">
+        android:pathData="M56,48 c-1.5,-4 1,-8 6,-8 c5,0 7,3 7,7 h-10 c0,1 1,3 4,3 c2,0 3.5,-1 4,-2 l2.5,2 c-1.5,2.5 -4,4 -8,4 c-6.5,0 -7,-6 -5.5,-6 z M62,43 c-1.5,0 -2.5,1.5 -2.5,3.5 h5 c0,-2 -1,-3.5 -2.5,-3.5 z">
         <aapt:attr name="android:fillColor">
             <gradient
-                android:startX="63"
-                android:startY="48"
-                android:endX="70"
-                android:endY="60"
+                android:startX="56"
+                android:startY="40"
+                android:endX="69"
+                android:endY="54"
                 android:type="linear">
-                <item android:offset="0" android:color="#FFFFFF" />
-                <item android:offset="1" android:color="#FBBF24" />
+                <item android:offset="0.0" android:color="#FFFFFF" />
+                <item android:offset="0.5" android:color="#E2E8F0" />
+                <item android:offset="1.0" android:color="#94A3B8" />
             </gradient>
         </aapt:attr>
     </path>
 
-    <!-- Decorative Gold diagonal strap representing a bookkeeping ledger band -->
+    <!-- Gold accent underline to anchor 'Le' monogram -->
     <path
-        android:pathData="M42,28 l32,52 h5 l-32,-52 Z">
+        android:pathData="M37,70 h34 v2.5 h-34 Z">
         <aapt:attr name="android:fillColor">
             <gradient
-                android:startX="42"
-                android:startY="28"
-                android:endX="79"
-                android:endY="80"
+                android:startX="37"
+                android:startY="70"
+                android:endX="71"
+                android:endY="72.5"
                 android:type="linear">
-                <item android:offset="0.0" android:color="#818CF8" />
-                <item android:offset="0.5" android:color="#6366F1" />
-                <item android:offset="1.0" android:color="#4F46E5" />
+                <item android:offset="0.0" android:color="#6366F1" />
+                <item android:offset="0.5" android:color="#FBBF24" />
+                <item android:offset="1.0" android:color="#818CF8" />
             </gradient>
         </aapt:attr>
     </path>
 
-    <!-- Small Golden star emblem (Sparkle) at top-right -->
+    <!-- Sparkling Golden Stars for that luxurious polished bookkeeping aesthetic -->
     <path
-        android:pathData="M81,25 l1,3 l3,1 l-3,1 l-1,3 l-1,-3 l-3,-1 l3,-1 Z">
-        <aapt:attr name="android:fillColor">
-            <gradient
-                android:startX="78"
-                android:startY="22"
-                android:endX="84"
-                android:endY="30"
-                android:type="linear">
-                <item android:offset="0.0" android:color="#FFFBEB" />
-                <item android:offset="1.0" android:color="#FBBF24" />
-            </gradient>
-        </aapt:attr>
-    </path>
+        android:pathData="M72,25 l0.8,1.8 l1.8,0.8 l-1.8,0.8 l-0.8,1.8 l-0.8,-1.8 l-1.8,-0.8 l1.8,-0.8 Z"
+        android:fillColor="#FBBF24" />
+
+    <path
+        android:pathData="M32,62 l0.5,1.2 l1.2,0.5 l-1.2,0.5 l-0.5,1.2 l-0.5,-1.2 l-1.2,-0.5 l1.2,-0.5 Z"
+        android:fillColor="#FFE875" />
 
 </vector>

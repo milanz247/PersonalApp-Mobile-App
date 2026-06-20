@@ -7,6 +7,7 @@ import androidx.fragment.app.FragmentActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -14,6 +15,9 @@ import androidx.compose.material.icons.filled.CloudQueue
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.LockOpen
+import androidx.compose.material.icons.filled.Password
+import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -599,14 +603,33 @@ fun SettingsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
         if (showBackupEmailDialog) {
             AlertDialog(
                 onDismissRequest = { showBackupEmailDialog = false },
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(20.dp),
                 containerColor = MaterialTheme.colorScheme.surface,
                 title = {
-                    Text(
-                        "Connect to Google Drive",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .background(PremiumIndigo.copy(alpha = 0.1f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CloudQueue,
+                                contentDescription = null,
+                                tint = PremiumIndigo,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Text(
+                            "Connect to Google Drive",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 },
                 text = {
                     Column(
@@ -656,10 +679,33 @@ fun SettingsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
         if (showDisableConfirmDialog) {
             AlertDialog(
                 onDismissRequest = { showDisableConfirmDialog = false },
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(20.dp),
                 containerColor = MaterialTheme.colorScheme.surface,
                 title = {
-                    Text("Deactivate App-Lock protection?", fontWeight = FontWeight.Bold)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .background(SystemRed.copy(alpha = 0.1f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.LockOpen,
+                                contentDescription = null,
+                                tint = SystemRed,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Text(
+                            "Deactivate App-Lock?",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 },
                 text = {
                     Text("Warning: Disabling App Lock will also clear your secure PIN shield, turn off Fingerprint/Face unlock, and allow direct entry on application startup.")
@@ -688,13 +734,33 @@ fun SettingsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
         if (showSetupPinDialog) {
             AlertDialog(
                 onDismissRequest = { showSetupPinDialog = false },
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(20.dp),
                 containerColor = MaterialTheme.colorScheme.surface,
                 title = {
-                    Text(
-                        text = if (setupStep == 1) "Create App Lock PIN" else "Confirm App Lock PIN",
-                        fontWeight = FontWeight.Bold
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .background(PremiumIndigo.copy(alpha = 0.1f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Password,
+                                contentDescription = null,
+                                tint = PremiumIndigo,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Text(
+                            text = if (setupStep == 1) "Create App Lock PIN" else "Confirm App Lock PIN",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 },
                 text = {
                     Column(
@@ -798,10 +864,33 @@ fun SettingsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
         if (showVerifyPinDialog) {
             AlertDialog(
                 onDismissRequest = { showVerifyPinDialog = false },
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(20.dp),
                 containerColor = MaterialTheme.colorScheme.surface,
                 title = {
-                    Text("Verify Current Passcode", fontWeight = FontWeight.Bold)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .background(PremiumIndigo.copy(alpha = 0.1f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Lock,
+                                contentDescription = null,
+                                tint = PremiumIndigo,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Text(
+                            "Verify Current Passcode",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 },
                 text = {
                     Column(
@@ -870,10 +959,33 @@ fun SettingsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
         if (showImportConfirmDialog) {
             AlertDialog(
                 onDismissRequest = { showImportConfirmDialog = false },
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(20.dp),
                 containerColor = MaterialTheme.colorScheme.surface,
                 title = {
-                    Text("Overwrite Ledger Database?", fontWeight = FontWeight.Bold)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .background(PremiumIndigo.copy(alpha = 0.1f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Restore,
+                                contentDescription = null,
+                                tint = PremiumIndigo,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Text(
+                            "Overwrite Ledger Database?",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 },
                 text = {
                     Text(

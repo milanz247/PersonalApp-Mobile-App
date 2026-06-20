@@ -239,14 +239,33 @@ fun RecurringScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
         if (showAddDialog) {
             AlertDialog(
                 onDismissRequest = { showAddDialog = false },
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(20.dp),
                 containerColor = MaterialTheme.colorScheme.surface,
                 title = {
-                    Text(
-                        "Schedule Repeating Entry",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .background(PremiumIndigo.copy(alpha = 0.1f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Repeat,
+                                contentDescription = null,
+                                tint = PremiumIndigo,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Text(
+                            "Schedule Repeating Entry",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 },
                 text = {
                     Column(
