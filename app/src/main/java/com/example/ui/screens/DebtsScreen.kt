@@ -461,16 +461,17 @@ fun DebtsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
     if (showAddDialog) {
         AlertDialog(
             onDismissRequest = { showAddDialog = false },
-            shape = RoundedCornerShape(20.dp),
+            shape = RoundedCornerShape(24.dp),
+            modifier = Modifier.border(1.5.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(24.dp)),
             containerColor = MaterialTheme.colorScheme.surface,
             title = {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(56.dp)
                             .background(PremiumIndigo.copy(alpha = 0.1f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
@@ -478,14 +479,16 @@ fun DebtsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
                             imageVector = Icons.Default.Handshake,
                             contentDescription = null,
                             tint = PremiumIndigo,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(28.dp)
                         )
                     }
+                    Spacer(modifier = Modifier.height(14.dp))
                     Text(
                         "Provision Loan Document",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
                 }
             },
@@ -593,6 +596,11 @@ fun DebtsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
                                 contactEmail = dContactEmail,
                                 contactPhone = dContactPhone
                             )
+                            com.example.utils.AppNotificationManager.showNotification(
+                                context,
+                                "Debt Recorded",
+                                "Successfully saved $dType of ${settings.currencySymbol}$amt with $dPersonName."
+                            )
                             showAddDialog = false
                             dPersonName = ""
                             dAmount = ""
@@ -616,16 +624,17 @@ fun DebtsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
         val validDebt = activeDebtDetail
         AlertDialog(
             onDismissRequest = { showRepayDialog = false },
-            shape = RoundedCornerShape(20.dp),
+            shape = RoundedCornerShape(24.dp),
+            modifier = Modifier.border(1.5.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(24.dp)),
             containerColor = MaterialTheme.colorScheme.surface,
             title = {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(56.dp)
                             .background(PremiumIndigo.copy(alpha = 0.1f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
@@ -633,21 +642,23 @@ fun DebtsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
                             imageVector = Icons.Default.SwapHoriz,
                             contentDescription = null,
                             tint = PremiumIndigo,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(28.dp)
                         )
                     }
+                    Spacer(modifier = Modifier.height(14.dp))
                     Text(
                         "Record Settle Transaction",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
                 }
             },
             text = {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.padding(top = 8.dp)
+                    modifier = Modifier.padding(top = 8.dp).verticalScroll(rememberScrollState())
                 ) {
                     Text(
                         text = "Remaining Owed Balance: ${settings.currencySymbol}${String.format("%,.2f", validDebt.remainingAmount)}",

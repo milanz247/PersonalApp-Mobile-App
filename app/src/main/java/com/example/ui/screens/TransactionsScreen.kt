@@ -44,6 +44,10 @@ fun TransactionsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
     val settings by viewModel.settingsState.collectAsState()
     val context = LocalContext.current
 
+    // Maps for O(1) lookups
+    val accountsMap = remember(accounts) { accounts.associateBy { it.id } }
+    val categoriesMap = remember(categories) { categories.associateBy { it.id } }
+
     var showAddDialog by remember { mutableStateOf(false) }
 
     // Transaction dialog parameters
@@ -57,6 +61,9 @@ fun TransactionsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
     var filterType by remember { mutableStateOf("ALL") } // "ALL" | "INCOME" | "EXPENSE" | "TRANSFER"
     var searchQuery by remember { mutableStateOf("") }
     var filterDate by remember { mutableStateOf<LocalDate?>(null) }
+    var filterCategoryIds by remember { mutableStateOf(emptySet<Long>()) }
+    var filterAccountIds by remember { mutableStateOf(emptySet<Long>()) }
+    var showFilters by remember { mutableStateOf(false) }
 
     val showDatePicker = {
         val calendar = Calendar.getInstance()
@@ -126,100 +133,216 @@ fun TransactionsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
             )
         )
 
-        // Filter chips bar
-        Row(
-            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            listOf("ALL", "INCOME", "EXPENSE", "TRANSFER").forEach { f ->
-                val active = filterType == f
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(if (active) PremiumIndigo else MaterialTheme.colorScheme.surfaceVariant)
-                        .border(
-                            width = 1.dp,
-                            color = if (active) PremiumIndigo else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
-                            shape = RoundedCornerShape(8.dp)
-                        )
-                        .clickable { filterType = f }
-                        .padding(horizontal = 14.dp, vertical = 8.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = f,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = if (active) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
-
-        // Date/Day Filter bar
+        // Filter Toggle Button Row
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            Text(
+                text = "Transactions & Filters",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            
+            TextButton(
+                onClick = { showFilters = !showFilters },
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                modifier = Modifier.height(32.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.CalendarToday,
-                    contentDescription = null,
-                    tint = if (filterDate != null) PremiumIndigo else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(16.dp)
-                )
                 Text(
-                    text = if (filterDate != null) {
-                        "Filtered Day: ${filterDate.toString()}"
-                    } else {
-                        "All Days journal view"
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = if (filterDate != null) FontWeight.Bold else FontWeight.Normal,
-                    color = if (filterDate != null) PremiumIndigo else MaterialTheme.colorScheme.onSurfaceVariant
+                    text = if (showFilters) "Hide Filters" else "Show Advanced Filters",
+                    fontSize = 12.sp,
+                    color = PremiumIndigo
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Icon(
+                    imageVector = if (showFilters) Icons.Default.KeyboardArrowUp else Icons.Default.FilterList,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = PremiumIndigo
                 )
             }
+        }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (filterDate != null) {
-                    TextButton(
-                        onClick = { filterDate = null },
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                        modifier = Modifier.height(30.dp)
-                    ) {
-                        Icon(imageVector = Icons.Default.Close, contentDescription = "Clear", modifier = Modifier.size(12.dp), tint = SystemRed)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Clear Day", fontSize = 10.sp, color = SystemRed, fontWeight = FontWeight.Bold)
+        // Advanced Filters Area
+        androidx.compose.animation.AnimatedVisibility(visible = showFilters) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                // Filter chips bar (Transaction Type)
+                Row(
+                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    listOf("ALL", "INCOME", "EXPENSE", "TRANSFER").forEach { f ->
+                        val active = filterType == f
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(if (active) PremiumIndigo else MaterialTheme.colorScheme.surfaceVariant)
+                                .border(
+                                    width = 1.dp,
+                                    color = if (active) PremiumIndigo else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .clickable { filterType = f }
+                                .padding(horizontal = 14.dp, vertical = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = f,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (active) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
 
-                OutlinedButton(
-                    onClick = { showDatePicker() },
-                    shape = RoundedCornerShape(8.dp),
-                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
-                    modifier = Modifier.height(30.dp),
-                    border = BorderStroke(1.dp, if (filterDate != null) PremiumIndigo else MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+                // Account Filter bar
+                if (accounts.isNotEmpty()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        accounts.forEach { acc ->
+                            val active = filterAccountIds.contains(acc.id)
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(if (active) PremiumIndigo else MaterialTheme.colorScheme.surfaceVariant)
+                                    .border(
+                                        width = 1.dp,
+                                        color = if (active) PremiumIndigo else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
+                                        shape = RoundedCornerShape(8.dp)
+                                    )
+                                    .clickable {
+                                        filterAccountIds = if (active) {
+                                            filterAccountIds - acc.id
+                                        } else {
+                                            filterAccountIds + acc.id
+                                        }
+                                    }
+                                    .padding(horizontal = 14.dp, vertical = 8.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "Acc: ${acc.name}",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = if (active) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Category Filter bar
+                if (categories.isNotEmpty()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        categories.forEach { cat ->
+                            val active = filterCategoryIds.contains(cat.id)
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(if (active) PremiumIndigo else MaterialTheme.colorScheme.surfaceVariant)
+                                    .border(
+                                        width = 1.dp,
+                                        color = if (active) PremiumIndigo else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
+                                        shape = RoundedCornerShape(8.dp)
+                                    )
+                                    .clickable {
+                                        filterCategoryIds = if (active) {
+                                            filterCategoryIds - cat.id
+                                        } else {
+                                            filterCategoryIds + cat.id
+                                        }
+                                    }
+                                    .padding(horizontal = 14.dp, vertical = 8.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = cat.name,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = if (active) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Date/Day Filter bar
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(imageVector = Icons.Default.FilterList, contentDescription = "Select date", modifier = Modifier.size(12.dp), tint = if (filterDate != null) PremiumIndigo else MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = if (filterDate != null) "Change Day" else "Filter Day",
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = if (filterDate != null) PremiumIndigo else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CalendarToday,
+                            contentDescription = null,
+                            tint = if (filterDate != null) PremiumIndigo else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = if (filterDate != null) {
+                                "Filtered Day: ${filterDate.toString()}"
+                            } else {
+                                "All Days journal view"
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = if (filterDate != null) FontWeight.Bold else FontWeight.Normal,
+                            color = if (filterDate != null) PremiumIndigo else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+        
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (filterDate != null) {
+                            TextButton(
+                                onClick = { filterDate = null },
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                                modifier = Modifier.height(30.dp)
+                            ) {
+                                Icon(imageVector = Icons.Default.Close, contentDescription = "Clear", modifier = Modifier.size(12.dp), tint = SystemRed)
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Clear Day", fontSize = 10.sp, color = SystemRed, fontWeight = FontWeight.Bold)
+                            }
+                        }
+        
+                        OutlinedButton(
+                            onClick = { showDatePicker() },
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                            modifier = Modifier.height(30.dp),
+                            border = BorderStroke(1.dp, if (filterDate != null) PremiumIndigo else MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+                        ) {
+                            Icon(imageVector = Icons.Default.FilterList, contentDescription = "Select date", modifier = Modifier.size(12.dp), tint = if (filterDate != null) PremiumIndigo else MaterialTheme.colorScheme.onSurfaceVariant)
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = if (filterDate != null) "Change Day" else "Filter Day",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (filterDate != null) PremiumIndigo else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
                 }
             }
         }
 
-        val filteredList = remember(transactions, filterType, searchQuery, filterDate) {
+        val filteredList = remember(transactions, filterType, searchQuery, filterDate, filterCategoryIds, filterAccountIds) {
             transactions.filter { tx ->
                 if (tx.deletedAt != null) return@filter false
                 if (filterType != "ALL" && tx.type != filterType) return@filter false
+                if (filterCategoryIds.isNotEmpty() && !filterCategoryIds.contains(tx.categoryId)) return@filter false
+                if (filterAccountIds.isNotEmpty() && !filterAccountIds.contains(tx.fromAccountId) && !filterAccountIds.contains(tx.toAccountId)) return@filter false
                 if (searchQuery.isNotBlank() && tx.note?.contains(searchQuery, true) != true) return@filter false
                 if (filterDate != null) {
                     val txDate = java.time.Instant.ofEpochMilli(tx.date)
@@ -236,10 +359,10 @@ fun TransactionsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
                 modifier = Modifier.weight(1f).fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "No matching transactions recorded.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                EmptyState(
+                    title = "No matching transactions",
+                    description = "No transactions found for the selected filters. Adjust your search or add a new transaction.",
+                    icon = Icons.Default.SearchOff
                 )
             }
         } else {
@@ -247,9 +370,9 @@ fun TransactionsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(filteredList) { tx ->
-                    val corCat = categories.firstOrNull { it.id == tx.categoryId }
-                    val accountName = (accounts.firstOrNull { it.id == tx.fromAccountId } ?: accounts.firstOrNull { it.id == tx.toAccountId })?.name ?: "System Ledger"
+                items(items = filteredList, key = { it.id }) { tx ->
+                    val corCat = categoriesMap[tx.categoryId]
+                    val accountName = (accountsMap[tx.fromAccountId] ?: accountsMap[tx.toAccountId])?.name ?: "System Ledger"
 
                     var showDeleteAlert by remember { mutableStateOf(false) }
 
@@ -262,10 +385,12 @@ fun TransactionsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
                             .height(IntrinsicSize.Min),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        val tagColor = try {
-                            Color(android.graphics.Color.parseColor(corCat?.color ?: "#737373"))
-                        } catch(e: Exception) {
-                            SystemBlue
+                        val tagColor = remember(corCat?.color) {
+                            try {
+                                Color(android.graphics.Color.parseColor(corCat?.color ?: "#737373"))
+                            } catch(e: Exception) {
+                                SystemBlue
+                            }
                         }
 
                         // Continuous timeline connection line with category-colored indicator node
@@ -424,33 +549,61 @@ fun TransactionsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
                     if (showDeleteAlert) {
                         AlertDialog(
                             onDismissRequest = { showDeleteAlert = false },
-                            shape = RoundedCornerShape(16.dp),
+                            shape = RoundedCornerShape(24.dp),
+                            modifier = Modifier.border(1.5.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(24.dp)),
                             containerColor = MaterialTheme.colorScheme.surface,
                             title = {
-                                Text(
-                                    "Delete Ledger Entry",
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Bold
-                                )
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(56.dp)
+                                            .background(SystemRed.copy(alpha = 0.1f), CircleShape),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Delete,
+                                            contentDescription = null,
+                                            tint = SystemRed,
+                                            modifier = Modifier.size(28.dp)
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(14.dp))
+                                    Text(
+                                        "Delete Ledger Entry",
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
                             },
                             text = {
                                 Text(
                                     "Are you sure you want to revert this transaction record permanently? This reverses the balance changes previously made to your cash stores.",
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth()
                                 )
                             },
                             confirmButton = {
-                                TextButton(onClick = {
-                                    showDeleteAlert = false
-                                    viewModel.deleteTransaction(tx.id)
-                                }) {
-                                    Text("Delete Entry", color = SystemRed, fontWeight = FontWeight.Bold)
+                                Button(
+                                    onClick = {
+                                        showDeleteAlert = false
+                                        viewModel.deleteTransaction(tx.id)
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = SystemRed),
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Text("Delete Entry", fontWeight = FontWeight.Bold)
                                 }
                             },
                             dismissButton = {
                                 TextButton(onClick = { showDeleteAlert = false }) {
-                                    Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
                                 }
                             }
                         )
@@ -463,16 +616,17 @@ fun TransactionsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
         if (showAddDialog) {
             AlertDialog(
                 onDismissRequest = { showAddDialog = false },
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(24.dp),
+                modifier = Modifier.border(1.5.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(24.dp)),
                 containerColor = MaterialTheme.colorScheme.surface,
                 title = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(36.dp)
+                                .size(56.dp)
                                 .background(PremiumIndigo.copy(alpha = 0.1f), CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
@@ -480,21 +634,23 @@ fun TransactionsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
                                 imageVector = Icons.Default.SwapHoriz,
                                 contentDescription = null,
                                 tint = PremiumIndigo,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(28.dp)
                             )
                         }
+                        Spacer(modifier = Modifier.height(14.dp))
                         Text(
                             "Log Transaction",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
                         )
                     }
                 },
                 text = {
                     Column(
                         verticalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.padding(top = 8.dp)
+                        modifier = Modifier.padding(top = 8.dp).verticalScroll(rememberScrollState())
                     ) {
                         // Type toggle
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -662,6 +818,7 @@ fun TransactionsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
                             colors = premiumTextFieldColors(),
                             singleLine = true
                         )
+                        Spacer(modifier = Modifier.height(16.dp))
                     }
                 },
                 confirmButton = {

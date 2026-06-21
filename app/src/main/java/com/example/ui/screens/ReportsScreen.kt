@@ -22,6 +22,7 @@ import com.example.utils.ExportUtils
 import java.time.LocalDate
 import android.app.DatePickerDialog
 import java.util.Calendar
+import kotlinx.coroutines.launch
 import java.time.format.DateTimeFormatter
 
 @Composable
@@ -32,6 +33,7 @@ fun ReportsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
     val settings by viewModel.settingsState.collectAsState()
     val currentMonthYear by viewModel.currentMonthYear.collectAsState()
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
 
     // Default to the current month's start and end date
     val now = LocalDate.now()
@@ -63,6 +65,20 @@ fun ReportsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
             endDate.dayOfMonth
         ).show()
     }
+
+    val rangeTxs = remember(transactions, startDate, endDate) {
+        transactions.filter { tx ->
+            val txDate = java.time.Instant.ofEpochMilli(tx.date)
+                .atZone(java.time.ZoneId.systemDefault())
+                .toLocalDate()
+            !txDate.isBefore(startDate) && !txDate.isAfter(endDate)
+        }.sortedBy { it.date }
+    }
+
+    val totalIncome = rangeTxs.filter { it.type == "INCOME" }.sumOf { it.amount }
+    val totalExpense = rangeTxs.filter { it.type == "EXPENSE" }.sumOf { it.amount }
+    val totalFee = rangeTxs.sumOf { it.fee }
+    val netChange = totalIncome - totalExpense - totalFee
 
     Column(
         modifier = modifier
@@ -104,18 +120,20 @@ fun ReportsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
-
+                
                 Button(
                     onClick = {
-                        ExportUtils.generateAndSharePdf(
-                            context = context,
-                            userName = settings.userName,
-                            monthYear = currentMonthYear,
-                            currencySymbol = settings.currencySymbol,
-                            accounts = accounts,
-                            categories = categories,
-                            transactions = transactions
-                        )
+                        coroutineScope.launch {
+                            ExportUtils.generateAndSharePdf(
+                                context = context,
+                                userName = settings.userName,
+                                monthYear = "${startDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))} - ${endDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}",
+                                currencySymbol = settings.currencySymbol,
+                                accounts = accounts,
+                                categories = categories,
+                                transactions = rangeTxs
+                            )
+                        }
                     },
                     modifier = Modifier.fillMaxWidth().testTag("generate_pdf_button"),
                     shape = RoundedCornerShape(10.dp),
@@ -150,14 +168,16 @@ fun ReportsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
 
                 Button(
                     onClick = {
-                        ExportUtils.generateAndShareCsv(
-                            context = context,
-                            startDate = startDate,
-                            endDate = endDate,
-                            transactions = transactions,
-                            accounts = accounts,
-                            categories = categories
-                        )
+                        coroutineScope.launch {
+                            ExportUtils.generateAndShareCsv(
+                                context = context,
+                                startDate = startDate,
+                                endDate = endDate,
+                                transactions = transactions,
+                                accounts = accounts,
+                                categories = categories
+                            )
+                        }
                     },
                     modifier = Modifier.fillMaxWidth().testTag("export_csv_button"),
                     shape = RoundedCornerShape(10.dp),
@@ -172,19 +192,6 @@ fun ReportsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
 
         // Section C: Interactive Beautiful Bank Statement Sheet / Ledger Statement
         val statementFormatter = remember { DateTimeFormatter.ofPattern("dd MMM yyyy") }
-        val rangeTxs = remember(transactions, startDate, endDate) {
-            transactions.filter { tx ->
-                val txDate = java.time.Instant.ofEpochMilli(tx.date)
-                    .atZone(java.time.ZoneId.systemDefault())
-                    .toLocalDate()
-                !txDate.isBefore(startDate) && !txDate.isAfter(endDate)
-            }.sortedBy { it.date }
-        }
-
-        val totalIncome = rangeTxs.filter { it.type == "INCOME" }.sumOf { it.amount }
-        val totalExpense = rangeTxs.filter { it.type == "EXPENSE" }.sumOf { it.amount }
-        val totalFee = rangeTxs.sumOf { it.fee }
-        val netChange = totalIncome - totalExpense - totalFee
 
         PremiumCard(modifier = Modifier.fillMaxWidth()) {
             Column(
@@ -321,11 +328,12 @@ fun ReportsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
                         }
                         HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
 
+                        val rowFormatter = remember { DateTimeFormatter.ofPattern("dd MMM") }
                         rangeTxs.forEach { tx ->
                             val txDate = java.time.Instant.ofEpochMilli(tx.date)
                                 .atZone(java.time.ZoneId.systemDefault())
                                 .toLocalDate()
-                            val formattedDate = txDate.format(DateTimeFormatter.ofPattern("dd MMM"))
+                            val formattedDate = txDate.format(rowFormatter)
                             val catName = categories.firstOrNull { it.id == tx.categoryId }?.name ?: tx.type
 
                             Row(

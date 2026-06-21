@@ -44,10 +44,11 @@ fun BudgetsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
     // Aggregate monthly actual expenses
     val expenseCategories = remember(categories) { categories.filter { it.type == "EXPENSE" } }
     val monthlyTransactions = remember(transactions, currentMonthYear) {
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM")
         transactions.filter {
             it.deletedAt == null &&
             it.type == "EXPENSE" &&
-            Instant.ofEpochMilli(it.date).atZone(ZoneId.systemDefault()).toLocalDate().format(DateTimeFormatter.ofPattern("yyyy-MM")) == currentMonthYear
+            Instant.ofEpochMilli(it.date).atZone(ZoneId.systemDefault()).toLocalDate().format(formatter) == currentMonthYear
         }
     }
 
@@ -117,7 +118,7 @@ fun BudgetsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(expenseCategories) { cat ->
+                items(items = expenseCategories, key = { it.id }) { cat ->
                     val allocatedBudget = budgets.firstOrNull { it.categoryId == cat.id }?.amount ?: 0.0
                     val spent = actualSpentMap[cat.id] ?: 0.0
                     val isLockedOver = spent > allocatedBudget && allocatedBudget > 0.0
@@ -228,16 +229,17 @@ fun BudgetsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
             val cat = showEditDialog!!
             AlertDialog(
                 onDismissRequest = { showEditDialog = null },
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(24.dp),
+                modifier = Modifier.border(1.5.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(24.dp)),
                 containerColor = MaterialTheme.colorScheme.surface,
                 title = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(36.dp)
+                                .size(56.dp)
                                 .background(PremiumIndigo.copy(alpha = 0.1f), CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
@@ -245,21 +247,23 @@ fun BudgetsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
                                 imageVector = Icons.Default.Adjust,
                                 contentDescription = null,
                                 tint = PremiumIndigo,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(28.dp)
                             )
                         }
+                        Spacer(modifier = Modifier.height(14.dp))
                         Text(
                             "Set Expense Budget",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
                         )
                     }
                 },
                 text = {
                     Column(
                         verticalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.padding(top = 8.dp)
+                        modifier = Modifier.padding(top = 8.dp).verticalScroll(rememberScrollState())
                     ) {
                         Text(
                             text = "Set monthly threshold limit for '${cat.name}'. You will receive active warnings if monthly expenses exceed this amount.",

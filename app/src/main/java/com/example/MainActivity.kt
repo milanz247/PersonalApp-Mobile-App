@@ -71,9 +71,21 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        
+        com.example.utils.AppNotificationManager.createNotificationChannel(this)
+
         setContent {
-            MyApplicationTheme {
-                val appViewModel: AppViewModel = viewModel()
+            val appViewModel: AppViewModel = viewModel()
+            val settings by appViewModel.settingsState.collectAsState()
+            
+            val isSystemDark = androidx.compose.foundation.isSystemInDarkTheme()
+            val darkTheme = when (settings.themePref) {
+                "DARK" -> true
+                "LIGHT" -> false
+                else -> isSystemDark
+            }
+            
+            MyApplicationTheme(darkTheme = darkTheme) {
                 val locked by appViewModel.isAppUnlocked.collectAsState()
                 val showWelcomeScreen by appViewModel.showWelcomeBackScreen.collectAsState()
                 var isLaunching by remember { mutableStateOf(true) }
@@ -90,19 +102,9 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
                 } else if (!locked) {
                     PinLockScreen(viewModel = appViewModel)
                 } else {
-                    AppContentLayout(viewModel = appViewModel)
+                    AppContentLayout(viewModel = appViewModel, darkTheme = darkTheme)
                 }
             }
-        }
-    }
-
-    override fun onStop() {
-        super.onStop()
-        try {
-            val appViewModel = androidx.lifecycle.ViewModelProvider(this)[com.example.ui.AppViewModel::class.java]
-            appViewModel.triggerOpportunisticBackup()
-        } catch (e: Exception) {
-            e.printStackTrace()
         }
     }
 }
@@ -399,7 +401,7 @@ fun FloatingNavItem(
 // CORE APP SCREEN WRAPPER WITH ADAPTIVE TABS AND THE MENU PATTERN
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppContentLayout(viewModel: AppViewModel) {
+fun AppContentLayout(viewModel: AppViewModel, darkTheme: Boolean) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: ROUTE_DASHBOARD
@@ -452,8 +454,19 @@ fun AppContentLayout(viewModel: AppViewModel) {
         (0..11).map { today.minusMonths(it.toLong()).format(DateTimeFormatter.ofPattern("yyyy-MM")) }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    if (!settings.hasCompletedOnboarding) {
+        com.example.ui.screens.OnboardingScreen(
+            viewModel = viewModel,
+            onFinish = {
+                viewModel.updateSettings(settings.copy(hasCompletedOnboarding = true))
+            }
+        )
+        return
+    }
+
+    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Scaffold(
+            containerColor = Color.Transparent,
             topBar = {
             TopAppBar(
                 title = {
@@ -715,7 +728,7 @@ fun AppContentLayout(viewModel: AppViewModel) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(getAppGradient())
+                .background(getAppGradient(darkTheme))
         ) {
             composable(ROUTE_DASHBOARD) {
                 DashboardScreen(
@@ -768,12 +781,26 @@ fun AppContentLayout(viewModel: AppViewModel) {
                         .padding(bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Text(
-                        "Expense Management Catalog",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .background(PremiumIndigo.copy(alpha = 0.1f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.GridOn, contentDescription = null, tint = PremiumIndigo, modifier = Modifier.size(16.dp))
+                        }
+                        Text(
+                            "Expense Management Catalog",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
 
                     val secondaryMenuItems = listOf(
                         Triple(ROUTE_CATEGORIES, Icons.Default.Label, "Categories"),
@@ -837,7 +864,26 @@ fun AppContentLayout(viewModel: AppViewModel) {
                         .padding(bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text("Quick Bookkeeper Cash Ledger Log", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .background(PremiumIndigo.copy(alpha = 0.1f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.FlashOn, contentDescription = null, tint = PremiumIndigo, modifier = Modifier.size(16.dp))
+                        }
+                        Text(
+                            "Quick Bookkeeper Cash Ledger Log",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
 
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         listOf("EXPENSE", "INCOME").forEach { type ->
@@ -1069,7 +1115,7 @@ fun WelcomeBackScreen(viewModel: AppViewModel) {
                         )
 
                         Text(
-                            text = "We discovered an existing database backup safely synced to your Google Account ledger.",
+                            text = "We discovered an existing database backup safely saved on this device.",
                             style = MaterialTheme.typography.bodyMedium,
                             textAlign = TextAlign.Center,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -1086,8 +1132,8 @@ fun WelcomeBackScreen(viewModel: AppViewModel) {
                                     verticalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
                                     Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                                        Text("Google Account:", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        Text(meta.email ?: "", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                        Text("User:", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text(meta.userName ?: "", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                                     }
                                     Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                                         Text("Saved On:", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -1176,169 +1222,111 @@ fun WelcomeBackScreen(viewModel: AppViewModel) {
 
 @Composable
 fun AppStartupSplashScreen() {
-    var animValue by remember { mutableStateOf(0.7f) }
-    var rotationValue by remember { mutableStateOf(0f) }
+    var animValue by remember { mutableStateOf(0.8f) }
 
     LaunchedEffect(Unit) {
-        while (true) {
-            animValue = 1.08f
-            kotlinx.coroutines.delay(1000)
-            animValue = 0.88f
-            kotlinx.coroutines.delay(1000)
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        while (true) {
-            rotationValue += 2.2f
-            kotlinx.coroutines.delay(16)
-        }
+        kotlinx.coroutines.delay(100) // Wait briefly before animating
+        animValue = 1f
     }
 
     val scale by animateFloatAsState(
         targetValue = animValue,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow)
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+        label = "LogoScale"
     )
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = Color(0xFF07050A) // Ultra pure pitch black-slate hybrid context to eliminate any brief latency white flash
+        color = MaterialTheme.colorScheme.background
     ) {
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            Color(0xFF060408),
-                            Color(0xFF0F0C20),
-                            Color(0xFF0A0815)
-                        )
-                    )
-                ),
-            contentAlignment = Alignment.Center
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
+            Spacer(modifier = Modifier.weight(1.2f))
+
+            // Clean Minimalist Logo
+            Box(
+                modifier = Modifier
+                    .size(100.dp)
+                    .graphicsLayer {
+                        scaleX = scale
+                        scaleY = scale
+                    }
+                    .background(color = MaterialTheme.colorScheme.primaryContainer, shape = CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "L",
+                    fontSize = 48.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            Text(
+                text = "L E D G E R",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Black,
+                color = MaterialTheme.colorScheme.onBackground,
+                letterSpacing = 6.sp
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "YOUR FINANCIAL VAULT",
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                letterSpacing = 2.sp
+            )
+
+            Spacer(modifier = Modifier.height(48.dp))
+
+            CircularProgressIndicator(
+                modifier = Modifier.size(32.dp),
+                strokeWidth = 3.dp,
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Text(
+                text = "Loading vault data...",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.Medium
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxSize().padding(24.dp)
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Spacer(modifier = Modifier.weight(1.2f))
-
-                // Custom Monogram Circle Vault containing "Le"
-                Box(
-                    modifier = Modifier
-                        .size(135.dp)
-                        .drawBehind {
-                            // Elegant gold and purple metallic rings
-                            drawCircle(
-                                brush = Brush.linearGradient(
-                                    colors = listOf(Color(0xFFFFD700), Color(0xFF6366F1))
-                                ),
-                                radius = size.minDimension / 2.05f,
-                                style = androidx.compose.ui.graphics.drawscope.Stroke(
-                                    width = 3.2.dp.toPx()
-                                )
-                            )
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(90.dp)
-                            .graphicsLayer {
-                                scaleX = scale
-                                scaleY = scale
-                                rotationZ = rotationValue * 0.08f
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        // Exquisite "Le" Monogram Logo Font Representation
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            Text(
-                                text = "L",
-                                fontSize = 48.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFFFFD700), // Pure Gold L
-                                style = MaterialTheme.typography.headlineLarge
-                            )
-                            Text(
-                                text = "e",
-                                fontSize = 38.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color.White, // Premium White e
-                                style = MaterialTheme.typography.headlineMedium,
-                                modifier = Modifier.offset(x = (-3).dp, y = 4.dp)
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(28.dp))
-
                 Text(
-                    text = "L E D G E R",
-                    fontSize = 26.sp,
-                    fontWeight = FontWeight.Black,
-                    color = Color.White,
-                    letterSpacing = 7.sp
-                )
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                Text(
-                    text = "DOUBLE-ENTRY VAULT ENGINE",
-                    fontSize = 10.sp,
+                    text = "DEVELOPED BY MILAN MADUSANKA",
+                    fontSize = 9.sp,
                     fontWeight = FontWeight.ExtraBold,
-                    color = Color(0xFF818CF8),
-                    letterSpacing = 2.sp
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    letterSpacing = 1.3.sp
                 )
-
-                Spacer(modifier = Modifier.height(36.dp))
-
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    strokeWidth = 2.5.dp,
-                    color = Color(0xFFFBBF24),
-                    trackColor = Color(0xFF1E1B4B)
-                )
-
-                Spacer(modifier = Modifier.height(14.dp))
-
                 Text(
-                    text = "Initializing Vault Handshake...",
-                    fontSize = 11.sp,
-                    color = Color.White.copy(alpha = 0.45f),
-                    letterSpacing = 0.4.sp
+                    text = "Version 1.25.0 - Premium Edition",
+                    fontSize = 8.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                    letterSpacing = 0.5.sp
                 )
-
-                Spacer(modifier = Modifier.weight(1f))
-
-                // Signature & Version segment at the bottom as requested
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-                    Text(
-                        text = "DEVELOPED BY MILAN MADUSANKA",
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.Black,
-                        color = Color(0xFF94A3B8),
-                        letterSpacing = 1.3.sp
-                    )
-                    Text(
-                        text = "Version 1.25.0 - Premium Edition",
-                        fontSize = 8.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.White.copy(alpha = 0.35f),
-                        letterSpacing = 0.5.sp
-                    )
-                }
-                Spacer(modifier = Modifier.height(24.dp))
             }
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }

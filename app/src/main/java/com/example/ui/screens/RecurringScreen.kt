@@ -17,6 +17,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
@@ -34,6 +35,7 @@ import java.util.Locale
 
 @Composable
 fun RecurringScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
     val recurring by viewModel.recurringState.collectAsState()
     val accounts by viewModel.accountsState.collectAsState()
     val categories by viewModel.categoriesState.collectAsState()
@@ -103,7 +105,7 @@ fun RecurringScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                items(recurring) { rec ->
+                items(items = recurring, key = { it.id }) { rec ->
                     val accountName = accounts.firstOrNull { it.id == rec.accountId }?.name ?: "Wallet Pocket"
                     val corCat = categories.firstOrNull { it.id == rec.categoryId }
                     val isExp = rec.type == "EXPENSE"
@@ -182,7 +184,14 @@ fun RecurringScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
                                 ) {
                                     // Run immediately button (Trigger play)
                                     IconButton(
-                                        onClick = { viewModel.executeRecurringNow(rec.id) },
+                                        onClick = { 
+                                            viewModel.executeRecurringNow(rec.id)
+                                            com.example.utils.AppNotificationManager.showNotification(
+                                                context,
+                                                "Transaction Triggered",
+                                                "Processed recurring ${rec.type} of ${settings.currencySymbol}${rec.amount} manually."
+                                            )
+                                        },
                                         modifier = Modifier
                                             .size(32.dp)
                                             .clip(CircleShape)
@@ -239,16 +248,17 @@ fun RecurringScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
         if (showAddDialog) {
             AlertDialog(
                 onDismissRequest = { showAddDialog = false },
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(24.dp),
+                modifier = Modifier.border(1.5.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(24.dp)),
                 containerColor = MaterialTheme.colorScheme.surface,
                 title = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(36.dp)
+                                .size(56.dp)
                                 .background(PremiumIndigo.copy(alpha = 0.1f), CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
@@ -256,14 +266,16 @@ fun RecurringScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
                                 imageVector = Icons.Default.Repeat,
                                 contentDescription = null,
                                 tint = PremiumIndigo,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(28.dp)
                             )
                         }
+                        Spacer(modifier = Modifier.height(14.dp))
                         Text(
                             "Schedule Repeating Entry",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
                         )
                     }
                 },

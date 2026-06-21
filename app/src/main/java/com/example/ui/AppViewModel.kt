@@ -227,7 +227,6 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 if (wallet != null) {
                     dbInstance.accountDao().updateAccount(wallet.copy(balance = 0.0))
                     successMessage.value = "Cash Wallet balance reset to zero (Rs.0.00) successfully!"
-                    triggerOpportunisticBackup()
                 } else {
                     errorMessage.value = "Cash Wallet not found."
                 }
@@ -242,7 +241,6 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             repository.addBankAccount(name, bankName, branchName, accountNumber, openingBalance)
                 .onSuccess {
                     successMessage.value = "Bank account '$name' added successfully!"
-                    triggerOpportunisticBackup()
                 }
                 .onFailure { errorMessage.value = it.message }
         }
@@ -253,7 +251,6 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             repository.editBankAccount(id, name, bankName, branchName, accountNumber)
                 .onSuccess {
                     successMessage.value = "Account updated successfully!"
-                    triggerOpportunisticBackup()
                 }
                 .onFailure { errorMessage.value = it.message }
         }
@@ -264,7 +261,6 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             repository.deleteBankAccount(id)
                 .onSuccess {
                     successMessage.value = "Bank account deleted!"
-                    triggerOpportunisticBackup()
                 }
                 .onFailure { errorMessage.value = it.message }
         }
@@ -275,7 +271,6 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             repository.transferFunds(fromAccountId, toAccountId, amount, fee, System.currentTimeMillis(), note)
                 .onSuccess {
                     successMessage.value = "Transferred Rs.${String.format("%.2f", amount)} successfully!"
-                    triggerOpportunisticBackup()
                 }
                 .onFailure { errorMessage.value = it.message }
         }
@@ -287,7 +282,6 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             repository.addTransaction(type, amount, accountId, categoryId, date, note)
                 .onSuccess {
                     successMessage.value = "Transaction added successfully!"
-                    triggerOpportunisticBackup()
                 }
                 .onFailure { errorMessage.value = it.message }
         }
@@ -298,7 +292,6 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             repository.deleteTransaction(id)
                 .onSuccess {
                     successMessage.value = "Transaction deleted!"
-                    triggerOpportunisticBackup()
                 }
                 .onFailure { errorMessage.value = it.message }
         }
@@ -310,7 +303,6 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             repository.addCategory(name, type, icon, color)
                 .onSuccess {
                     successMessage.value = "Custom Category '$name' added!"
-                    triggerOpportunisticBackup()
                 }
                 .onFailure { errorMessage.value = it.message }
         }
@@ -321,7 +313,6 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             repository.deleteCategory(id)
                 .onSuccess {
                     successMessage.value = "Category deleted!"
-                    triggerOpportunisticBackup()
                 }
                 .onFailure { errorMessage.value = it.message }
         }
@@ -333,7 +324,6 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             repository.addDebt(type, personName, amount, accountId, fee, dueDate, description, contactEmail, contactPhone)
                 .onSuccess {
                     successMessage.value = "New Loan (${type.lowercase()}) recorded to $personName!"
-                    triggerOpportunisticBackup()
                 }
                 .onFailure { errorMessage.value = it.message }
         }
@@ -344,7 +334,6 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             repository.recordDebtPayment(debtId, paymentAmount, accountId, fee)
                 .onSuccess {
                     successMessage.value = "Payment of Rs.${String.format("%.2f", paymentAmount)} recorded successfully!"
-                    triggerOpportunisticBackup()
                 }
                 .onFailure { errorMessage.value = it.message }
         }
@@ -355,7 +344,6 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             repository.updateOrCreateBudget(categoryId, currentMonthYear.value, amount)
             successMessage.value = "Budget updated!"
-            triggerOpportunisticBackup()
         }
     }
 
@@ -365,7 +353,6 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             repository.addRecurringTransaction(accountId, categoryId, amount, description, type, frequency, startDate)
                 .onSuccess {
                     successMessage.value = "Saved recurring schedule rule!"
-                    triggerOpportunisticBackup()
                 }
                 .onFailure { errorMessage.value = it.message }
         }
@@ -375,7 +362,6 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             repository.toggleRecurringStatus(id)
             successMessage.value = "Recurring cycle status updated."
-            triggerOpportunisticBackup()
         }
     }
 
@@ -383,7 +369,6 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             repository.deleteRecurring(id)
             successMessage.value = "Recurring rule deleted."
-            triggerOpportunisticBackup()
         }
     }
 
@@ -392,7 +377,6 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             repository.executeRecurringNow(id)
                 .onSuccess {
                     successMessage.value = "Recurring task triggered manually!"
-                    triggerOpportunisticBackup()
                 }
                 .onFailure { errorMessage.value = it.message }
         }
@@ -403,6 +387,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         userName: String,
         currencySymbol: String,
         currencyCode: String,
+        identityNumber: String?,
         timezone: String,
         dateFormat: String,
         appLockEnabled: Boolean,
@@ -418,6 +403,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 userName = userName,
                 currencySymbol = currencySymbol,
                 currencyCode = currencyCode,
+                identityNumber = identityNumber,
                 timezone = timezone,
                 dateFormat = dateFormat,
                 appLockEnabled = appLockEnabled,
@@ -437,118 +423,13 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun updateSettings(newSettings: com.example.data.model.AppSettings) {
+        viewModelScope.launch {
+            repository.updateSettings(newSettings)
+        }
+    }
+
     // Google Sign-In and simulated Drive Backups
-    fun connectGoogleAccount(email: String) {
-        viewModelScope.launch {
-            val oldSettings = repository.getSettings()
-            repository.updateSettings(oldSettings.copy(googleAccountEmail = email, autoBackupEnabled = true))
-            successMessage.value = "Google Account connected: $email"
-            triggerOpportunisticBackup()
-        }
-    }
-
-    fun disconnectGoogleAccount() {
-        viewModelScope.launch {
-            val oldSettings = repository.getSettings()
-            repository.updateSettings(oldSettings.copy(googleAccountEmail = null, autoBackupEnabled = false))
-            successMessage.value = "Google Account disconnected!"
-        }
-    }
-
-    fun setAutoBackupEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            val oldSettings = repository.getSettings()
-            repository.updateSettings(oldSettings.copy(autoBackupEnabled = enabled))
-            successMessage.value = if (enabled) "Auto Backup enabled!" else "Auto Backup disabled."
-            if (enabled) {
-                triggerOpportunisticBackup()
-            }
-        }
-    }
-
-    private var lastOpportunisticBackupTime = 0L
-
-    fun triggerOpportunisticBackup() {
-        val now = System.currentTimeMillis()
-        if (now - lastOpportunisticBackupTime < 3 * 60 * 1000) {
-            // Debounced to once every 3 minutes to avoid overhead
-            return
-        }
-        viewModelScope.launch {
-            val settings = repository.getSettings()
-            if (settings.googleAccountEmail != null && settings.autoBackupEnabled) {
-                try {
-                    val backupJson = BackupRestoreHelper.exportDatabaseToJson(db)
-                    BackupRestoreHelper.saveBackup(getApplication(), backupJson)
-                    repository.updateSettings(settings.copy(lastBackupAt = System.currentTimeMillis()))
-                    lastOpportunisticBackupTime = System.currentTimeMillis()
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            }
-        }
-    }
-
-    fun backupDatabaseToDrive() {
-        viewModelScope.launch {
-            val settings = repository.getSettings()
-            if (settings.googleAccountEmail == null) {
-                errorMessage.value = "Please connect your Google Account first in Settings!"
-                return@launch
-            }
-
-            try {
-                // Generate database payload
-                val backupJson = BackupRestoreHelper.exportDatabaseToJson(db)
-                // Save using the robust file persistent location + rolling history
-                BackupRestoreHelper.saveBackup(getApplication(), backupJson)
-
-                val curTime = System.currentTimeMillis()
-                repository.updateSettings(settings.copy(lastBackupAt = curTime))
-                successMessage.value = "Backup successfully uploaded to your Google Drive folder!"
-            } catch (e: Exception) {
-                errorMessage.value = "Drive backup failed: ${e.message}"
-            }
-        }
-    }
-
-    fun restoreDatabaseFromDrive() {
-        viewModelScope.launch {
-            val settings = repository.getSettings()
-            if (settings.googleAccountEmail == null) {
-                errorMessage.value = "Please connect your Google Account first in Settings!"
-                return@launch
-            }
-
-            try {
-                // Fetch the simulated latest backup file
-                val file = BackupRestoreHelper.getBackupFile(getApplication())
-                if (!file.exists()) {
-                    // Try to search in legacy directory
-                    val legacyFile = File(getApplication<Application>().filesDir, "GoogleDriveBackup.json")
-                    if (legacyFile.exists()) {
-                        legacyFile.copyTo(file)
-                    } else {
-                        errorMessage.value = "No backup file found in your Google Drive 'drive.appdata' folder!"
-                        return@launch
-                    }
-                }
-
-                val backupJson = file.readText()
-                val success = BackupRestoreHelper.restoreDatabaseFromJson(db, backupJson)
-                if (success) {
-                    // Seed defaults if everything wiped out
-                    repository.seedDatabaseIfNecessary()
-                    successMessage.value = "Database restored successfully from Google Drive backup!"
-                } else {
-                    errorMessage.value = "Failed to parse backup payload. Payload may be corrupt."
-                }
-            } catch (e: Exception) {
-                errorMessage.value = "Restoration failed: ${e.message}"
-            }
-        }
-    }
-
     // Local manual backup file Export and Import via SAF (Storage Access Framework) Urises
     fun exportBackupToUri(uri: android.net.Uri, context: Context) {
         viewModelScope.launch {

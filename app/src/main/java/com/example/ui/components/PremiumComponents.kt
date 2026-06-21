@@ -224,13 +224,13 @@ fun EmptyState(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(24.dp),
+            .padding(vertical = 32.dp, horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Box(
             modifier = Modifier
-                .size(64.dp)
+                .size(100.dp)
                 .background(PremiumIndigo.copy(alpha = 0.08f), CircleShape),
             contentAlignment = Alignment.Center
         ) {
@@ -238,11 +238,11 @@ fun EmptyState(
                 imageVector = icon,
                 contentDescription = null,
                 tint = PremiumIndigo,
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(50.dp)
             )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         Text(
             text = title,
@@ -252,7 +252,7 @@ fun EmptyState(
             color = MaterialTheme.colorScheme.onSurface
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         Text(
             text = description,
@@ -263,7 +263,7 @@ fun EmptyState(
         )
 
         if (actionLabel != null && onActionClick != null) {
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(24.dp))
             PremiumButton(
                 text = actionLabel,
                 onClick = onActionClick

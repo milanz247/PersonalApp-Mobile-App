@@ -42,15 +42,51 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+import kotlinx.coroutines.launch
+
 @Composable
 fun SettingsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
     val settings by viewModel.settingsState.collectAsState()
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
 
     // Local controller states
     var nameInput by remember { mutableStateOf("") }
     var currencySymInput by remember { mutableStateOf("") }
     var currencyCodeInput by remember { mutableStateOf("") }
+    var identityNumberInput by remember { mutableStateOf("") }
+    var profileImagePath by remember { mutableStateOf<String?>(null) }
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let {
+            // Take persistable URI permission
+            try {
+                context.contentResolver.takePersistableUriPermission(
+                    it,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+                profileImagePath = it.toString()
+                viewModel.saveSettings(
+                    userName = nameInput,
+                    currencySymbol = currencySymInput,
+                    currencyCode = currencyCodeInput,
+                    identityNumber = identityNumberInput,
+                    timezone = settings.timezone,
+                    dateFormat = settings.dateFormat,
+                    appLockEnabled = settings.appLockEnabled,
+                    appLockPin = settings.appLockPin,
+                    avatarPath = it.toString(),
+                    debtReminderDaysBefore = settings.debtReminderDaysBefore,
+                    debtInitialMsg = settings.debtInitialMessageTemplate,
+                    debtReminderMsg = settings.debtReminderMessageTemplate
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
 
     // Dialog flags
     var showDisableConfirmDialog by remember { mutableStateOf(false) }
@@ -66,10 +102,6 @@ fun SettingsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
     // Verify current PIN state (for changing PIN)
     var verifyPinInput by remember { mutableStateOf("") }
     var verifyPinError by remember { mutableStateOf<String?>(null) }
-
-    // Backup email states
-    var showBackupEmailDialog by remember { mutableStateOf(false) }
-    var bEmailInput by remember { mutableStateOf("") }
 
     // Local file backup/recovery states
     var showImportConfirmDialog by remember { mutableStateOf(false) }
@@ -97,6 +129,8 @@ fun SettingsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
         nameInput = settings.userName
         currencySymInput = settings.currencySymbol
         currencyCodeInput = settings.currencyCode
+        identityNumberInput = settings.identityNumber ?: ""
+        profileImagePath = settings.avatarPath
     }
 
     Column(
@@ -154,6 +188,35 @@ fun SettingsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
                     singleLine = true
                 )
 
+                OutlinedTextField(
+                    value = identityNumberInput,
+                    onValueChange = { identityNumberInput = it },
+                    label = { Text("ID Number / Legal Identity") },
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth().testTag("identity_number_settings_input"),
+                    colors = premiumTextFieldColors(),
+                    singleLine = true
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "Profile Image",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    OutlinedButton(
+                        onClick = { imagePickerLauncher.launch(arrayOf("image/*")) },
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Text(if (profileImagePath != null) "Change Image" else "Select Image")
+                    }
+                }
+
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     OutlinedTextField(
                         value = currencySymInput,
@@ -176,6 +239,47 @@ fun SettingsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
                     )
                 }
 
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+
+                // Theming Mode Row
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = "App Theme Appearance",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        val themes = listOf("SYSTEM" to "Auto Settings", "LIGHT" to "Light", "DARK" to "Dark")
+                        themes.forEach { (key, label) ->
+                            val isSelected = settings.themePref == key
+                            OutlinedButton(
+                                onClick = { viewModel.updateSettings(settings.copy(themePref = key)) },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(10.dp),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    containerColor = if (isSelected) PremiumIndigo.copy(alpha = 0.1f) else Color.Transparent
+                                ),
+                                border = BorderStroke(
+                                    width = if (isSelected) 2.dp else 1.dp,
+                                    color = if (isSelected) PremiumIndigo else MaterialTheme.colorScheme.outline.copy(0.5f)
+                                )
+                            ) {
+                                Text(
+                                    text = label,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (isSelected) PremiumIndigo else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        }
+                    }
+                }
+                
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
 
                 // Passcode Switch controller row
@@ -316,11 +420,12 @@ fun SettingsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
                             userName = nameInput,
                             currencySymbol = currencySymInput,
                             currencyCode = currencyCodeInput,
+                            identityNumber = identityNumberInput,
                             timezone = settings.timezone,
                             dateFormat = settings.dateFormat,
                             appLockEnabled = settings.appLockEnabled,
                             appLockPin = settings.appLockPin,
-                            avatarPath = null,
+                            avatarPath = profileImagePath,
                             debtReminderDaysBefore = settings.debtReminderDaysBefore,
                             debtInitialMsg = settings.debtInitialMessageTemplate,
                             debtReminderMsg = settings.debtReminderMessageTemplate
@@ -335,162 +440,6 @@ fun SettingsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
             }
         }
 
-        // Section B: Google Cloud Backup preferences
-        PremiumCard(modifier = Modifier.fillMaxWidth()) {
-            Column(
-                modifier = Modifier.padding(18.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.CloudQueue,
-                        contentDescription = null,
-                        tint = PremiumIndigo,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Text(
-                        text = "Google Drive Cloud Synchronizer",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-                Text(
-                    text = "Encrypt and back up your transaction database to your personal Google Drive account silently in order to secure historical ledger logs from unexpected device crashes.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                if (settings.googleAccountEmail == null) {
-                    Button(
-                        onClick = { showBackupEmailDialog = true },
-                        modifier = Modifier.fillMaxWidth().testTag("connect_google_button"),
-                        shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
-                    ) {
-                        Icon(imageVector = Icons.Default.CloudQueue, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Connect Google Account", fontWeight = FontWeight.Bold)
-                    }
-                } else {
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Text(
-                                    text = "Google Drive connected:",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    text = settings.googleAccountEmail ?: "",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                            TextButton(onClick = { viewModel.disconnectGoogleAccount() }) {
-                                Text("Disconnect", color = SystemRed, fontWeight = FontWeight.Bold)
-                            }
-                        }
-
-                        // Auto-Backup toggle
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "Automatic Sync",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                val lastBkText = if (settings.lastBackupAt != null) {
-                                    val diff = System.currentTimeMillis() - settings.lastBackupAt!!
-                                    val seconds = diff / 1000
-                                    val minutes = seconds / 60
-                                    val hours = minutes / 60
-                                    val days = hours / 24
-
-                                    val relative = when {
-                                        days > 0 -> "$days ${if (days == 1L) "day" else "days"} ago"
-                                        hours > 0 -> "$hours ${if (hours == 1L) "hour" else "hours"} ago"
-                                        minutes > 0 -> "$minutes ${if (minutes == 1L) "minute" else "minutes"} ago"
-                                        else -> "Just now"
-                                    }
-                                    "Last backup: $relative"
-                                } else {
-                                    "Silent periodic sync over safe network"
-                                }
-                                Text(
-                                    text = lastBkText,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Switch(
-                                checked = settings.autoBackupEnabled,
-                                onCheckedChange = { viewModel.setAutoBackupEnabled(it) },
-                                colors = SwitchDefaults.colors(checkedThumbColor = PremiumIndigo)
-                            )
-                        }
-
-                        val bkTime = settings.lastBackupAt
-                        if (bkTime != null) {
-                            val formD = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date(bkTime))
-                            Text(
-                                text = "Last successful cloud synchronization: $formD",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = SystemGreen,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        } else {
-                            Text(
-                                text = "Database has never been synced to Google Drive.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            Button(
-                                onClick = { viewModel.backupDatabaseToDrive() },
-                                modifier = Modifier.weight(1f).testTag("backup_now_button"),
-                                shape = RoundedCornerShape(10.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = PremiumIndigo)
-                            ) {
-                                Text("Backup Now", fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                            }
-
-                            Button(
-                                onClick = { viewModel.restoreDatabaseFromDrive() },
-                                modifier = Modifier.weight(1f).testTag("restore_now_button"),
-                                shape = RoundedCornerShape(10.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            ) {
-                                Text("Restore Backup", fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                            }
-                        }
-                    }
-                }
-            }
-        }
 
         // Section C: Local File Backup & Recovery preferences
         PremiumCard(modifier = Modifier.fillMaxWidth()) {
@@ -598,82 +547,6 @@ fun SettingsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
             }
         }
         Spacer(modifier = Modifier.height(32.dp))
-
-        // Add backup email prompt
-        if (showBackupEmailDialog) {
-            AlertDialog(
-                onDismissRequest = { showBackupEmailDialog = false },
-                shape = RoundedCornerShape(20.dp),
-                containerColor = MaterialTheme.colorScheme.surface,
-                title = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .background(PremiumIndigo.copy(alpha = 0.1f), CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.CloudQueue,
-                                contentDescription = null,
-                                tint = PremiumIndigo,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                        Text(
-                            "Connect to Google Drive",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                },
-                text = {
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.padding(top = 8.dp)
-                    ) {
-                        Text(
-                            text = "Sync and back up your local database files automatically to Google Drive using secure REST endpoints.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        OutlinedTextField(
-                            value = bEmailInput,
-                            onValueChange = { bEmailInput = it },
-                            label = { Text("Your Google email (OAuth)") },
-                            placeholder = { Text("username@gmail.com") },
-                            shape = RoundedCornerShape(10.dp),
-                            modifier = Modifier.fillMaxWidth().testTag("google_email_input"),
-                            singleLine = true
-                        )
-                    }
-                },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            if (bEmailInput.isNotBlank() && bEmailInput.contains("@")) {
-                                viewModel.connectGoogleAccount(bEmailInput)
-                                showBackupEmailDialog = false
-                                bEmailInput = ""
-                            }
-                        },
-                        shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = PremiumIndigo)
-                    ) {
-                        Text("Connect", fontWeight = FontWeight.Bold)
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showBackupEmailDialog = false }) {
-                        Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-            )
-        }
 
         // 1. App Lock Disable Confirmation Dialog
         if (showDisableConfirmDialog) {

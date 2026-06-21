@@ -394,28 +394,38 @@ fun AccountsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
                             AlertDialog(
                                 onDismissRequest = { showDeleteConfirm = false },
                                 shape = RoundedCornerShape(24.dp),
+                                modifier = Modifier.border(1.5.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(24.dp)),
                                 containerColor = MaterialTheme.colorScheme.surface,
                                 title = {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    Column(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalAlignment = Alignment.CenterHorizontally
                                     ) {
                                         Box(
                                             modifier = Modifier
-                                                .size(36.dp)
+                                                .size(56.dp)
                                                 .background(SystemRed.copy(alpha = 0.1f), CircleShape),
                                             contentAlignment = Alignment.Center
                                         ) {
-                                            Icon(Icons.Default.Delete, contentDescription = null, tint = SystemRed, modifier = Modifier.size(18.dp))
+                                            Icon(Icons.Default.Delete, contentDescription = null, tint = SystemRed, modifier = Modifier.size(28.dp))
                                         }
-                                        Text("Delete '${account.name}'?", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                                        Spacer(modifier = Modifier.height(14.dp))
+                                        Text(
+                                            "Delete '${account.name}'?",
+                                            style = MaterialTheme.typography.titleLarge,
+                                            fontWeight = FontWeight.Bold,
+                                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
                                     }
                                 },
                                 text = {
                                     Text(
                                         "Are you sure you want to permanently detach this card and delete associated savings entries? Ledger journal records balance mappings will be adjusted.",
                                         style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                        modifier = Modifier.fillMaxWidth()
                                     )
                                 },
                                 confirmButton = {
@@ -425,14 +435,14 @@ fun AccountsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
                                             viewModel.deleteBankAccount(account.id)
                                         },
                                         colors = ButtonDefaults.buttonColors(containerColor = SystemRed),
-                                        shape = RoundedCornerShape(10.dp)
+                                        shape = RoundedCornerShape(12.dp)
                                     ) {
                                         Text("Delete account", fontWeight = FontWeight.Bold)
                                     }
                                 },
                                 dismissButton = {
                                     TextButton(onClick = { showDeleteConfirm = false }) {
-                                        Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
                                     }
                                 }
                             )
@@ -446,16 +456,17 @@ fun AccountsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
         if (showAddBankDialog) {
             AlertDialog(
                 onDismissRequest = { showAddBankDialog = false },
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(24.dp),
+                modifier = Modifier.border(1.5.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(24.dp)),
                 containerColor = MaterialTheme.colorScheme.surface,
                 title = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(36.dp)
+                                .size(56.dp)
                                 .background(PremiumIndigo.copy(alpha = 0.1f), CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
@@ -463,21 +474,23 @@ fun AccountsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
                                 imageVector = Icons.Default.AccountBalance,
                                 contentDescription = null,
                                 tint = PremiumIndigo,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(28.dp)
                             )
                         }
+                        Spacer(modifier = Modifier.height(14.dp))
                         Text(
                             "Create Bank Account",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
                         )
                     }
                 },
                 text = {
                     Column(
                         verticalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.padding(top = 8.dp)
+                        modifier = Modifier.padding(top = 8.dp).verticalScroll(rememberScrollState())
                     ) {
                         OutlinedTextField(
                             value = bankAccountName,
@@ -605,6 +618,7 @@ fun AccountsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
                             colors = premiumTextFieldColors(),
                             singleLine = true
                         )
+                        Spacer(modifier = Modifier.height(16.dp))
                     }
                 },
                 confirmButton = {
@@ -641,39 +655,73 @@ fun AccountsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
 
             AlertDialog(
                 onDismissRequest = { showTransferDialog = false },
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(24.dp),
+                modifier = Modifier.border(1.5.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(24.dp)),
                 containerColor = MaterialTheme.colorScheme.surface,
                 title = {
-                    Text(
-                        "Inter-Account Transfer",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(56.dp)
+                                .background(PremiumIndigo.copy(alpha = 0.1f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.SwapHoriz,
+                                contentDescription = null,
+                                tint = PremiumIndigo,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(14.dp))
+                        Text(
+                            "Inter-Account Transfer",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                    }
                 },
                 text = {
                     Column(
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.verticalScroll(rememberScrollState())
                     ) {
                         Text(
-                            "Source Wallet/Bank",
+                            "SOURCE SENDER WALLET",
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            fontWeight = FontWeight.Bold,
+                            color = PremiumIndigo,
+                            letterSpacing = 0.5.sp
                         )
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            accounts.take(3).forEach { acc ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            accounts.forEach { acc ->
                                 val selected = fromAccountSelected == acc.id
                                 Box(
                                     modifier = Modifier
-                                        .weight(1f)
-                                        .clip(RoundedCornerShape(8.dp))
+                                        .clip(RoundedCornerShape(12.dp))
                                         .background(if (selected) PremiumIndigo else MaterialTheme.colorScheme.surfaceVariant)
                                         .border(
                                             width = 1.dp,
                                             color = if (selected) PremiumIndigo else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
-                                            shape = RoundedCornerShape(8.dp)
+                                            shape = RoundedCornerShape(12.dp)
                                         )
-                                        .clickable { fromAccountSelected = acc.id }
-                                        .padding(8.dp),
+                                        .clickable {
+                                            fromAccountSelected = acc.id
+                                            if (toAccountSelected == acc.id) {
+                                                toAccountSelected = accounts.firstOrNull { it.id != acc.id }?.id ?: 0L
+                                            }
+                                        }
+                                        .padding(horizontal = 14.dp, vertical = 8.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
@@ -688,25 +736,31 @@ fun AccountsScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
                         }
 
                         Text(
-                            "Destination Wallet/Bank",
+                            "DESTINATION BANK / WALLET",
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            fontWeight = FontWeight.Bold,
+                            color = PremiumIndigo,
+                            letterSpacing = 0.5.sp
                         )
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            accounts.take(3).forEach { acc ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            accounts.filter { it.id != fromAccountSelected }.forEach { acc ->
                                 val selected = toAccountSelected == acc.id
                                 Box(
                                     modifier = Modifier
-                                        .weight(1f)
-                                        .clip(RoundedCornerShape(8.dp))
+                                        .clip(RoundedCornerShape(12.dp))
                                         .background(if (selected) PremiumIndigo else MaterialTheme.colorScheme.surfaceVariant)
                                         .border(
                                             width = 1.dp,
                                             color = if (selected) PremiumIndigo else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
-                                            shape = RoundedCornerShape(8.dp)
+                                            shape = RoundedCornerShape(12.dp)
                                         )
                                         .clickable { toAccountSelected = acc.id }
-                                        .padding(8.dp),
+                                        .padding(horizontal = 14.dp, vertical = 8.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(

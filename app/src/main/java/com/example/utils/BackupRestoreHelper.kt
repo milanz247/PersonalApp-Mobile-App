@@ -26,45 +26,49 @@ object BackupRestoreHelper {
 
     data class BackupMetadata(
         val timestamp: Long,
-        val email: String?,
+        val userName: String?,
         val accountsCount: Int,
         val transactionsCount: Int
     )
 
-    // Find our secure backup file path that will survive uninstallation
-    fun getBackupFile(context: Context): File {
+    // Find our secure backup file path that will survive uninstallation, associated with the user payload
+    fun getBackupFile(context: Context, userName: String = "default"): File {
+        val safeContent = userName.replace(Regex("[^a-zA-Z0-9]"), "_")
+        val fileName = "personal_finance_backup_$safeContent.json"
+        
         val backupDir = File("/sdcard/Download")
         if (!backupDir.exists()) {
             backupDir.mkdirs()
         }
         val target = if (backupDir.exists() && backupDir.canWrite()) {
-            File(backupDir, "personal_finance_backup.json")
+            File(backupDir, fileName)
         } else {
             val sdcard = File("/sdcard")
             if (sdcard.exists() && sdcard.canWrite()) {
-                File(sdcard, "personal_finance_backup.json")
+                File(sdcard, fileName)
             } else {
                 // Fallback inside data/data-private files dir
-                File(context.filesDir, "GoogleDriveBackup.json")
+                File(context.filesDir, "Backup_$safeContent.json")
             }
         }
         return target
     }
 
     // Save backup JSON text to stable target + rolling history for maximum safety
-    fun saveBackup(context: Context, backupJson: String) {
-        val mainFile = getBackupFile(context)
+    fun saveBackup(context: Context, backupJson: String, userName: String = "default") {
+        val safeContent = userName.replace(Regex("[^a-zA-Z0-9]"), "_")
+        val mainFile = getBackupFile(context, userName)
         
         try {
             val parentDir = mainFile.parentFile ?: context.filesDir
             val curTime = System.currentTimeMillis()
-            val historyFile = File(parentDir, "personal_finance_backup_$curTime.json")
+            val historyFile = File(parentDir, "personal_finance_backup_${safeContent}_$curTime.json")
             
             historyFile.writeText(backupJson)
             
-            // Clean up historical list, keeping only the 3 latest files
+            // Clean up historical list, keeping only the 3 latest files scoped per user
             val historyFiles = parentDir.listFiles { _, name ->
-                name.startsWith("personal_finance_backup_") && name.endsWith(".json") && name != "personal_finance_backup.json"
+                name.startsWith("personal_finance_backup_${safeContent}_") && name.endsWith(".json")
             }?.sortedByDescending { it.lastModified() }
             
             if (historyFiles != null && historyFiles.size > 3) {
@@ -90,7 +94,7 @@ object BackupRestoreHelper {
             
             return BackupMetadata(
                 timestamp = file.lastModified(),
-                email = backup.settings?.googleAccountEmail,
+                userName = backup.settings?.userName,
                 accountsCount = backup.accounts.size,
                 transactionsCount = backup.transactions.size
             )

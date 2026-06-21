@@ -27,9 +27,55 @@ class RecurringTransactionWorker(context: Context, params: WorkerParameters) : C
         for (rec in activeList) {
             if (rec.nextDate <= todayMillis) {
                 repo.triggerRecurringExecution(rec)
+                showRecurringNotification(rec.id, rec.description ?: "Scheduled Task", rec.amount)
             }
         }
         return Result.success()
+    }
+
+    private fun showRecurringNotification(recurringId: Long, name: String, amount: Double) {
+        val channelId = "recurring_transactions"
+        val notificationId = recurringId.toInt() + 20000
+
+        // Create channel
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channelName = "Recurring Transactions"
+            val descriptionText = "Notifications for automatically processed recurring transactions."
+            val importance = NotificationManager.IMPORTANCE_DEFAULT
+            val channel = NotificationChannel(channelId, channelName, importance).apply {
+                description = descriptionText
+            }
+            val notificationManager: NotificationManager =
+                applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
+
+        val intent = Intent(applicationContext, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            applicationContext,
+            recurringId.toInt(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val message = "Automatically processed: $name for Rs.${String.format("%.2f", amount)}"
+        val builder = NotificationCompat.Builder(applicationContext, channelId)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle("Recurring Transaction Executed")
+            .setContentText(message)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(message))
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+
+        try {
+            val notificationManager = NotificationManagerCompat.from(applicationContext)
+            notificationManager.notify(notificationId, builder.build())
+        } catch (e: SecurityException) {
+            // Permission checked or neglected on older builds
+        }
     }
 }
 
@@ -116,10 +162,10 @@ class AutoBackupWorker(context: Context, params: WorkerParameters) : CoroutineWo
         val repo = AppRepository(db)
 
         val settings = repo.getSettings()
-        if (settings.googleAccountEmail != null && settings.autoBackupEnabled) {
+        if (settings.autoBackupEnabled) {
             try {
                 val backupJson = com.example.utils.BackupRestoreHelper.exportDatabaseToJson(db)
-                com.example.utils.BackupRestoreHelper.saveBackup(applicationContext, backupJson)
+                com.example.utils.BackupRestoreHelper.saveBackup(applicationContext, backupJson, settings.userName)
                 repo.updateSettings(settings.copy(lastBackupAt = System.currentTimeMillis()))
             } catch (e: Exception) {
                 e.printStackTrace()

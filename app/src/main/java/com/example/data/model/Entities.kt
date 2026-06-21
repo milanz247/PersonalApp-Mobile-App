@@ -13,6 +13,7 @@ data class AppSettings(
     val dateFormat: String = "DD/MM/YYYY", // Or "MM/DD/YYYY", "YYYY-MM-DD"
     val avatarPath: String? = null,
     val userName: String = "User",
+    val identityNumber: String? = null,
     val appLockEnabled: Boolean = false,
     val appLockPin: String? = null, // Hashed PIN code
     val biometricEnabled: Boolean = false,
@@ -24,7 +25,13 @@ data class AppSettings(
     val debtAutoSendInitial: Boolean = false,
     val debtReminderDaysBefore: Int = 2,
     val debtInitialMessageTemplate: String = "Hi {person_name}, recorded a {type} of {amount} via {account_name} on {date}. Due by: {due_date}.",
-    val debtReminderMessageTemplate: String = "Hi {person_name}, this is a gentle reminder for the pending {type} of {remaining_amount} which is due on {due_date}."
+    val debtReminderMessageTemplate: String = "Hi {person_name}, this is a gentle reminder for the pending {type} of {remaining_amount} which is due on {due_date}.",
+    
+    // Onboarding
+    val hasCompletedOnboarding: Boolean = false,
+    
+    // Theming
+    val themePref: String = "SYSTEM" // "SYSTEM", "LIGHT", "DARK"
 )
 
 @Entity(tableName = "accounts")

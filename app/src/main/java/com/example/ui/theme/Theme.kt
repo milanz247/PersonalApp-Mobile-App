@@ -9,7 +9,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
 
 @Composable
-fun getAppGradient(): Brush {
+fun getAppGradient(darkTheme: Boolean = androidx.compose.foundation.isSystemInDarkTheme()): Brush {
+    if (darkTheme) {
+        return Brush.verticalGradient(
+            colors = listOf(
+                Color(0xFF0F172A), // Tailwind Slate 900
+                Color(0xFF020617)  // Tailwind Slate 950
+            )
+        )
+    }
     // Elegant, clean gradient starting with pure white and settling on soft Facebook grey
     return Brush.verticalGradient(
         colors = listOf(
@@ -49,11 +57,10 @@ private val LightColorScheme = lightColorScheme(
 
 @Composable
 fun MyApplicationTheme(
-    darkTheme: Boolean = false,
+    darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
-    // Force LightColorScheme to maintain a pristine modern light interface as requested
-    val colorScheme = LightColorScheme
+    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
 
     MaterialTheme(
         colorScheme = colorScheme,

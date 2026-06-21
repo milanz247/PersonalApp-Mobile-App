@@ -16,6 +16,7 @@ android {
     targetSdk = 36
     versionCode = 1
     versionName = "1.0"
+    manifestPlaceholders["appAuthRedirectScheme"] = "com.googleusercontent.apps.965171137111-j6qvhbsgpvun0kn1jokdgs6g4js79cad"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -92,7 +93,6 @@ dependencies {
   implementation(libs.androidx.room.ktx)
   implementation(libs.androidx.room.runtime)
   implementation(libs.coil.compose)
-  implementation(libs.play.services.auth)
   implementation(libs.androidx.work.runtime.ktx)
   implementation(libs.converter.moshi)
   implementation(libs.firebase.ai)

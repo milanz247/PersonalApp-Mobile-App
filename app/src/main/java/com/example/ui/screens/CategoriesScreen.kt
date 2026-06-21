@@ -88,7 +88,7 @@ fun CategoriesScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(categories) { cat ->
+                items(items = categories, key = { it.id }) { cat ->
                     var showDeleteAlert by remember { mutableStateOf(false) }
 
                     // Custom grid card
@@ -137,16 +137,17 @@ fun CategoriesScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
                     if (showDeleteAlert) {
                         AlertDialog(
                             onDismissRequest = { showDeleteAlert = false },
-                            shape = RoundedCornerShape(20.dp),
+                            shape = RoundedCornerShape(24.dp),
+                            modifier = Modifier.border(1.5.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(24.dp)),
                             containerColor = MaterialTheme.colorScheme.surface,
                             title = {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     Box(
                                         modifier = Modifier
-                                            .size(36.dp)
+                                            .size(56.dp)
                                             .background(SystemRed.copy(alpha = 0.1f), CircleShape),
                                         contentAlignment = Alignment.Center
                                     ) {
@@ -154,14 +155,16 @@ fun CategoriesScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
                                             imageVector = Icons.Default.Delete,
                                             contentDescription = null,
                                             tint = SystemRed,
-                                            modifier = Modifier.size(20.dp)
+                                            modifier = Modifier.size(28.dp)
                                         )
                                     }
+                                    Spacer(modifier = Modifier.height(14.dp))
                                     Text(
                                         "Delete Category",
                                         style = MaterialTheme.typography.titleLarge,
                                         fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
                                     )
                                 }
                             },
@@ -169,20 +172,26 @@ fun CategoriesScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
                                 Text(
                                     "Are you sure you want to delete '${cat.name}' permanently? Any transaction logs mapping back to this category will become un-categorized.",
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth()
                                 )
                             },
                             confirmButton = {
-                                TextButton(onClick = {
-                                    showDeleteAlert = false
-                                    viewModel.deleteCategory(cat.id)
-                                }) {
-                                    Text("Delete", color = SystemRed, fontWeight = FontWeight.Bold)
+                                Button(
+                                    onClick = {
+                                        showDeleteAlert = false
+                                        viewModel.deleteCategory(cat.id)
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = SystemRed),
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Text("Delete", fontWeight = FontWeight.Bold)
                                 }
                             },
                             dismissButton = {
                                 TextButton(onClick = { showDeleteAlert = false }) {
-                                    Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
                                 }
                             }
                         )
@@ -195,16 +204,17 @@ fun CategoriesScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
         if (showAddDialog) {
             AlertDialog(
                 onDismissRequest = { showAddDialog = false },
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(24.dp),
+                modifier = Modifier.border(1.5.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(24.dp)),
                 containerColor = MaterialTheme.colorScheme.surface,
                 title = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(36.dp)
+                                .size(56.dp)
                                 .background(PremiumIndigo.copy(alpha = 0.1f), CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
@@ -212,14 +222,16 @@ fun CategoriesScreen(viewModel: AppViewModel, modifier: Modifier = Modifier) {
                                 imageVector = Icons.Default.Label,
                                 contentDescription = null,
                                 tint = PremiumIndigo,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(28.dp)
                             )
                         }
+                        Spacer(modifier = Modifier.height(14.dp))
                         Text(
                             "Create Category",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
                         )
                     }
                 },

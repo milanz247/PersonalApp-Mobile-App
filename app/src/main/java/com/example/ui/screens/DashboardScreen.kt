@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Handshake
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -31,6 +32,8 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
+import coil.compose.AsyncImage
+
 @Composable
 fun DashboardScreen(
     viewModel: AppViewModel,
@@ -49,10 +52,11 @@ fun DashboardScreen(
 
     // Filter current month active transactions
     val activeTransactions = remember(transactions, currentMonthYear) {
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM")
         transactions.filter { tx ->
             if (tx.deletedAt != null) return@filter false
             val txDate = Instant.ofEpochMilli(tx.date).atZone(ZoneId.systemDefault()).toLocalDate()
-            val txMonthYear = txDate.format(DateTimeFormatter.ofPattern("yyyy-MM"))
+            val txMonthYear = txDate.format(formatter)
             txMonthYear == currentMonthYear
         }
     }
@@ -117,18 +121,50 @@ fun DashboardScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // Welcoming Title Brand Header
-        Column(modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)) {
-            Text(
-                text = "WELCOME BACK",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = settings.userName,
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onBackground
-            )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 4.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(
+                    text = "WELCOME BACK",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = settings.userName,
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            }
+            
+            if (!settings.avatarPath.isNullOrBlank()) {
+                AsyncImage(
+                    model = settings.avatarPath,
+                    contentDescription = "Profile Picture",
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = settings.userName.take(1).uppercase(),
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        fontSize = 20.sp
+                    )
+                }
+            }
         }
 
         // Total Balance Hero Card (Dynamic Gradient Canvas with Asymmetric Lines)
@@ -445,18 +481,13 @@ fun DashboardScreen(
 
         if (rawRecentList.isEmpty()) {
             PremiumCard(modifier = Modifier.fillMaxWidth()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(24.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "No recent transactions booked yet.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                EmptyState(
+                    title = "No recent transactions",
+                    description = "Your ledger is currently empty. Start by adding a transaction.",
+                    icon = Icons.Default.List,
+                    actionLabel = "Go to Ledger",
+                    onActionClick = onNavigateToTransactions
+                )
             }
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
